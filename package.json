@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "run-s build-main copy-spines",
     "build-main": "run-p type-check \"build-only {@}\" --",
+    "build-with-spine": "run-s build-only \"copy-spines\"",
     "copy-spines": "node scripts/copy-spines.js",
     "preview": "vite preview",
     "build-only": "vite build",

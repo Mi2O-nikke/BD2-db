@@ -1,0 +1,64 @@
+{
+  "path": "dragondungeonrun/",
+  "type": "large",
+  "id": "dragondungeonrun",
+  "title": "Dragon Dungeon Run",
+  "content": [
+    {
+      "name": "event_dungeon_run_die_01.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_die_02.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_die_03.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_die_04.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_die_05.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_die_06.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_die_07.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_die_08.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_ending_01.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_ending_02.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_ending_03.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_ending_04.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_ending_05.png",
+      "text": ""
+    },
+    {
+      "name": "event_dungeon_run_ending_06.png",
+      "text": ""
+    }
+  ]
+}

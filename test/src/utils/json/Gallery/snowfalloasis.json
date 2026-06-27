@@ -1,0 +1,100 @@
+{
+  "path": "snowfalloasis/",
+  "type": "large",
+  "id": "snowfalloasis",
+  "title": "Snow Fall Oasis",
+  "content": [
+    {
+      "name": "EventScene_snowfalloasis_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_01_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_02_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_04_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_04_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_04_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_05_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_05_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_06_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_06_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_11.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_12.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_13.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_snowfalloasis_14.png",
+      "text": ""
+    },
+    {
+      "name": "EventTitle_snowfalloasis_02.png",
+      "text": ""
+    }
+  ]
+}

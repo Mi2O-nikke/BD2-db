@@ -1,0 +1,29 @@
+{
+  "path": "rebornevil/",
+  "type": "large",
+  "id": "rebornevil",
+  "title": "Reborn Evil",
+  "content": [
+    {
+      "name": "EventScene_ce007_01.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce007_02.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce007_03_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce007_04.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce007_05.webp",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 24 to 1.5mb"
+}

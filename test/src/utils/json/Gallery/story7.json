@@ -1,0 +1,73 @@
+{
+  "path": "story7/",
+  "type": "large",
+  "id": "story7",
+  "title": "Chapters 35 to 36",
+  "content": [
+    {
+      "name": "EventScene_Chap_35_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_03_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_03_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_05_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_05_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_05_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_35_05_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_36_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_36_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_36_03_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_36_03_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_36_03_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_36_03_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_36_04.png",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 80mb total to 4mb"
+}

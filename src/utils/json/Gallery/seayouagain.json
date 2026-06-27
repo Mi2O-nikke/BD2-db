@@ -1,0 +1,52 @@
+{
+  "path": "seayouagain/",
+  "type": "large",
+  "id": "seayouagain",
+  "title": "Sea You Again",
+  "content": [
+    {
+      "name": "EventScene_SeaYouAgain_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_01_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_02_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_03_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_03_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_SeaYouAgain_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventTitle_SeaYouAgain_02.png",
+      "text": ""
+    }
+  ]
+}

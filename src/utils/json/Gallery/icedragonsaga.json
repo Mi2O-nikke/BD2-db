@@ -1,0 +1,89 @@
+{
+  "path": "icedragonsaga/",
+  "type": "large",
+  "id": "icedragonsaga",
+  "title": "Ice Dragon Saga",
+  "content": [
+    {
+      "name": "EventScene_icedragonsaga_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_05_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_05_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_05_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_08_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_08_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_09_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_09_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_10_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_10_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_10_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_icedragonsaga_11.png",
+      "text": ""
+    },
+    {
+      "name": "EventTitle_icedragonsaga_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventTitle_icedragonsaga_03.png",
+      "text": ""
+    }
+  ],
+  "notice": "The original in-game raw images totals over 114mb. Compressed to 6mb. Probably not in order."
+}

@@ -1,25 +1,10 @@
 <template>
   <div class="bg-gray-900 text-white h-dvh max-h-dvh flex flex-col">
-    <Navbar
-      v-show="!inspectMode"
-      :has-custom-background="hasCustomBackground"
-      @mobile-menu="onNavMobileMenu"
-      @upload-bg="onCustomBgUpload"
-      @overlay-active="onNavbarOverlayActive"
-    />
     <div class="flex flex-1 flex-col lg:flex-row h-full min-h-0 overflow-hidden">
-      <div class="order-1 lg:order-none hidden lg:flex flex-col min-h-0">
-        <AnimationSidebar
-          :animations="animations"
-          :skins="skins"
-          :exporting="isExporting"
-          :screenshotting="isScreenshotting"
-          @select="onSelectAnimation"
-          @reset-camera="onResetCamera"
-          @screenshot="onScreenshot"
-          @export-animation="onExportAnimation"
-          @category-change="onCategoryChange"
-          class="lg:w-64"
+      <div v-show="!inspectMode" class="hidden lg:flex flex-col min-h-0">
+        <CharacterSidebar
+          @select="onSelectCharacter"
+          class="lg:w-80"
         />
       </div>
       <main class="relative flex-1 p-2 overflow-hidden">
@@ -103,10 +88,21 @@
           </div>
         </div>
       </main>
-      <div v-show="!inspectMode" class="hidden lg:flex flex-col min-h-0">
-        <CharacterSidebar
-          @select="onSelectCharacter"
-          class="lg:w-80"
+      <div class="order-1 lg:order-none hidden lg:flex flex-col min-h-0">
+        <AnimationSidebar
+          :animations="animations"
+          :skins="skins"
+          :exporting="isExporting"
+          :screenshotting="isScreenshotting"
+          @select="onSelectAnimation"
+          @reset-camera="onResetCamera"
+          @screenshot="onScreenshot"
+          @export-animation="onExportAnimation"
+          @category-change="onCategoryChange"
+          @yapping-mode="onYappingMode"
+          @hit-area-toggle="onHitAreaToggle"
+          @mood-changed="onMoodChanged"
+          class="lg:w-64"
         />
       </div>
     </div>
@@ -131,6 +127,9 @@
             @reset-camera="onResetCamera"
             @screenshot="onScreenshot"
             @export-animation="onExportAnimation"
+            @yapping-mode="onYappingMode"
+            @hit-area-toggle="onHitAreaToggle"
+            @mood-changed="onMoodChanged"
           />
         </div>
         <div class="flex-1 min-h-0">
@@ -142,13 +141,13 @@
 </template>
 
 <script setup lang="ts">
-import Navbar from '@/components/Navbar.vue'
 import CharacterSidebar from '@/components/CharacterSideBar.vue'
 import AnimationSidebar from '@/components/AnimationSideBar.vue'
 import SpineViewer from '@/components/SpineViewer.vue'
 import { ref, watchEffect, computed, watch, onBeforeUnmount } from 'vue'
 import { useCharacterStore } from '@/stores/characterStore'
 import { buildUrl } from './utils/urlSync'
+import { moodMotionConfig } from '@/utils/hitAreaConfig'
 
 import CameraResetIcon from '@/components/icons/CameraResetIcon.vue';
 import MenuIcon from '@/components/icons/MenuIcon.vue';
@@ -167,14 +166,11 @@ const viewerRef = ref<InstanceType<typeof SpineViewer> | null>(null)
 const isExporting = ref(false)
 const isScreenshotting = ref(false)
 const showMobileControls = ref(false)
-const navMobileMenuOpen = ref(false)
-const navbarOverlayActive = ref(false)
 const showLayerSelectionHint = ref(false)
 const inspectMode = ref(false)
 const overlayActive = computed(
-  () => showMobileControls.value || navMobileMenuOpen.value || navbarOverlayActive.value,
+  () => showMobileControls.value,
 )
-const hasCustomBackground = computed(() => !!store.customBackgroundImage)
 let layerSelectionHintTimeout: number | null = null
 
 function onSelectCharacter(id: string) {
@@ -229,27 +225,41 @@ function onCategoryChange() {
   showMobileControls.value = false;
 }
 
-function onNavMobileMenu(open: boolean) {
-  navMobileMenuOpen.value = open
+function onYappingMode(data: { enabled: boolean; idleAnim?: string; talkAnim?: string }) {
+  if (!viewerRef.value) return
+  viewerRef.value.setYappingMode(data.enabled, data.idleAnim, data.talkAnim)
 }
 
-function onCustomBgUpload(image: string | null) {
-  if (image && image === store.customBackgroundImage) {
-    store.customBackgroundImage = null
+function onHitAreaToggle(visible: boolean) {
+  if (!viewerRef.value) return
+  viewerRef.value.setHitAreaVisible(visible)
+}
+
+function onMoodChanged(data: { mood: string; animation: string }) {
+  if (!viewerRef.value) return
+  
+  const charId = store.selectedCharacterId
+  const motionAnim = moodMotionConfig[charId]
+  
+  // Always update store.selectedAnimation to the final idle state
+  store.selectedAnimation = data.animation
+  
+  if (motionAnim && data.animation === 'idle2') {
+    // Play motion first, then queue idle2 after it finishes
+    viewerRef.value.playAnimationSequence([motionAnim, data.animation])
+  } else {
+    // Play idle animation directly
+    viewerRef.value.playAnimation(data.animation)
   }
-  store.customBackgroundImage = image
-}
-
-function onNavbarOverlayActive(active: boolean) {
-  navbarOverlayActive.value = active
+  
+  // Reload hit areas for the new idle state (but don't show them)
+  viewerRef.value.reloadHitAreas()
 }
 
 function onInspectModeChange(value: boolean) {
   inspectMode.value = value
   if (value) {
     showMobileControls.value = false
-    navMobileMenuOpen.value = false
-    navbarOverlayActive.value = false
   }
 }
 

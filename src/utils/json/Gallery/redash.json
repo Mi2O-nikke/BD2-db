@@ -1,0 +1,104 @@
+{
+  "path": "redash/",
+  "type": "large",
+  "id": "redash",
+  "title": "RED ASH",
+  "content": [
+    {
+      "name": "EventScene_redash_01_01_f.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_01_02_f.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_01_03_f.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_01_04_f.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_03_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_04_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_04_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_04_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_09_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_09_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_09_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_10_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_10_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_12_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_12_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_redash_13.png",
+      "text": ""
+    },
+    {
+      "name": "EventTitle_redash_t2.png",
+      "text": ""
+    }
+  ]
+}

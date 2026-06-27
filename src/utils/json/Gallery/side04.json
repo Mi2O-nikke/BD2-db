@@ -1,0 +1,41 @@
+{
+  "path": "side04/",
+  "type": "large",
+  "id": "side04",
+  "title": "Eden Spear",
+  "content": [
+    {
+      "name": "EventScene_Side_04_01_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_04_01_2.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_04_01_3.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_04_01_4.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_04_01_5.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_04_02_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_04_02_2.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_04_03.webp",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 24 to 1.9mb"
+}

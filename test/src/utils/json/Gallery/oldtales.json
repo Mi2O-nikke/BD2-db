@@ -1,0 +1,221 @@
+{
+  "path": "oldtales/",
+  "type": "large",
+  "id": "oldtales",
+  "title": "Old Tales",
+  "content": [
+    {
+      "name": "EventScene_oldtales_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_01_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_03_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_03_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_03_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_06_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_06_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_06_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_06_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_07_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_07_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_08_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_08_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_08_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_08_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_08_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_08_6.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_09.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_10.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_11_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_11_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_11_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_11_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_11_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_12_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_12_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_12_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_12_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_12_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_13_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_13_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_13_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_14.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_15.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_16.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_17_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_17_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_17_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_18_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_18_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_18_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_18_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_18_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_19_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_19_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_20.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_oldtales_21.png",
+      "text": ""
+    }
+  ],
+  "notice": "The original in-game raw images totals over 230mb. It's way too high. The images here are compressed to a total of 12.5mb, thus they aren't original quality, but fairly close. <br/>Also this is probably out of order, I skipped the event and went by image id."
+}

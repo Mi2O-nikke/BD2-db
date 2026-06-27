@@ -1,0 +1,72 @@
+{
+  "path": "story2/",
+  "type": "large",
+  "id": "story2",
+  "title": "Chapters 10 to 19",
+  "content": [
+    {
+      "name": "EventScene_Chap_10_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_11_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_12_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_12_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_12_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_12_After_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_13_01_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_13_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_13_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_13_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_13_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_13_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_14_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_19_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Main_15_After_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Main_16_01.png",
+      "text": ""
+    }
+  ]
+}

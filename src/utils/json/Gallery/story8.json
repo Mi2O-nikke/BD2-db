@@ -1,0 +1,37 @@
+{
+  "path": "story8/",
+  "type": "large",
+  "id": "story8",
+  "title": "Chapters 37 to 38",
+  "content": [
+    {
+      "name": "EventScene_Chap_37_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_37_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_38_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_38_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_38_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_38_02_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_38_03.png",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 34mb total to 1.5mb"
+}

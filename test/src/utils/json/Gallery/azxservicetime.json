@@ -1,0 +1,44 @@
+{
+  "path": "azxservicetime/",
+  "type": "large",
+  "id": "azxservicetime",
+  "title": "Azxservicetime",
+  "content": [
+    {
+      "name": "terminusticket_cutscene_image_01.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_02.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_03.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_04.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_05.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_06.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_07.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_08.png",
+      "text": ""
+    },
+    {
+      "name": "terminusticket_cutscene_image_09.png",
+      "text": ""
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "path": "juveniledays/",
+  "type": "large",
+  "id": "juveniledays",
+  "title": "Juvenile Days",
+  "content": [
+    {
+      "name": "juveniledays_list_bg_hard.png",
+      "text": ""
+    },
+    {
+      "name": "juveniledays_list_bg_nor.png",
+      "text": ""
+    }
+  ]
+}

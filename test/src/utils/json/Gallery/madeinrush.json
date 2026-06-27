@@ -1,0 +1,40 @@
+{
+  "path": "madeinrush/",
+  "type": "large",
+  "id": "madeinrush",
+  "title": "Made In Rush",
+  "content": [
+    {
+      "name": "madeinrush_cutscene_1.png",
+      "text": ""
+    },
+    {
+      "name": "madeinrush_cutscene_2.png",
+      "text": ""
+    },
+    {
+      "name": "madeinrush_cutscene_3.png",
+      "text": ""
+    },
+    {
+      "name": "madeinrush_cutscene_4.png",
+      "text": ""
+    },
+    {
+      "name": "madeinrush_cutscene_5.png",
+      "text": ""
+    },
+    {
+      "name": "madeinrush_cutscene_6.png",
+      "text": ""
+    },
+    {
+      "name": "madeinrush_cutscene_7.png",
+      "text": ""
+    },
+    {
+      "name": "madeinrush_cutscene_8.png",
+      "text": ""
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "path": "story9/",
+  "type": "large",
+  "id": "story9",
+  "title": "Chapters 39 to 40",
+  "content": [
+    {
+      "name": "EventScene_Chap_39_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_39_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_39_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_39_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_40_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_40_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_40_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_40_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_40_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Chap_40_06.png",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 53.5mb total to 2.6mb"
+}

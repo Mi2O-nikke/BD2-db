@@ -1,0 +1,69 @@
+{
+  "path": "memoriesteller/",
+  "type": "large",
+  "id": "memoriesteller",
+  "title": "Memories Teller",
+  "content": [
+    {
+      "name": "EventScene_memoriesteller_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_04_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_04_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_04_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_04_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_04_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_05_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_05_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_08.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_09_5_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_memoriesteller_09_5.png",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 86.4mb to 5.5mb"
+}

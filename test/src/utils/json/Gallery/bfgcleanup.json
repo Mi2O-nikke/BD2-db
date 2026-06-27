@@ -1,0 +1,48 @@
+{
+  "path": "bfgcleanup/",
+  "type": "large",
+  "id": "bfgcleanup",
+  "title": "BFG Clean UP !",
+  "content": [
+    {
+      "name": "bg_basic.png",
+      "text": ""
+    },
+    {
+      "name": "bg_high.png",
+      "text": ""
+    },
+    {
+      "name": "bg_middle.png",
+      "text": ""
+    },
+    {
+      "name": "clear_scene_1.png",
+      "text": ""
+    },
+    {
+      "name": "clear_scene_2.png",
+      "text": ""
+    },
+    {
+      "name": "clear_scene_3.png",
+      "text": ""
+    },
+    {
+      "name": "clear_scene_4.png",
+      "text": ""
+    },
+    {
+      "name": "clear_scene_5.png",
+      "text": ""
+    },
+    {
+      "name": "clear_scene_skill_1.png",
+      "text": ""
+    },
+    {
+      "name": "clear_scene_skill_2.png",
+      "text": ""
+    }
+  ]
+}

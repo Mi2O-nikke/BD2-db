@@ -1,0 +1,40 @@
+{
+  "path": "voltroad/",
+  "type": "large",
+  "id": "voltroad",
+  "title": "Volt Road",
+  "content": [
+    {
+      "name": "EventScene_voltroad_SD_01_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_voltroad_SD_01_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_voltroad_SD_01_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_voltroad_SD_01_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_voltroad_SD_01_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_voltroad_SD_01_06.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_voltroad_SD_01_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_voltroad_SD_01_08.png",
+      "text": ""
+    }
+  ]
+}

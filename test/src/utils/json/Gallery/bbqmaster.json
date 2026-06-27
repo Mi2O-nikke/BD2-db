@@ -1,0 +1,28 @@
+{
+  "path": "bbqmaster/",
+  "type": "large",
+  "id": "bbqmaster",
+  "title": "BBQ Master",
+  "content": [
+    {
+      "name": "EventScene_bbqmaster_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_bbqmaster_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_bbqmaster_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_bbqmaster_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_bbqmaster_05.png",
+      "text": ""
+    }
+  ]
+}

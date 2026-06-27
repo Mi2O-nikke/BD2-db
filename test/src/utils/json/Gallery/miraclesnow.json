@@ -1,0 +1,24 @@
+{
+  "path": "miraclesnow/",
+  "type": "large",
+  "id": "miraclesnow",
+  "title": "Miracle Snow",
+  "content": [
+    {
+      "name": "EventScene_MiracleSnow_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_MiracleSnow_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_MiracleSnow_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_MiracleSnow_04.png",
+      "text": ""
+    }
+  ]
+}

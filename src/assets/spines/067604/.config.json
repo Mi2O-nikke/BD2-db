@@ -1,0 +1,20 @@
+{
+  "conf_ver": 1,
+  "type": 9,
+  "options": {
+    "tex_type": 0,
+    "edge_padding": false
+  },
+  "skeleton": "char067604.skel",
+  "atlases": [
+    {
+      "atlas": "char067604.atlas",
+      "tex_names": [
+        "char067604"
+      ],
+      "textures": [
+        "char067604.png"
+      ]
+    }
+  ]
+}

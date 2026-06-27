@@ -1,0 +1,121 @@
+{
+  "path": "coinsinrush/",
+  "type": "large",
+  "id": "coinsinrush",
+  "title": "Coins In Rush",
+  "content": [
+    {
+      "name": "coinsinrush_opening_char_01.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char_02.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char_03.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char_04.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char_05.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char_06.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char_07.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char_09.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_opening_char.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part1_char_01.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part1_char_02.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part2_char_02_low.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part2_char_03_low.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part2_char_04_low.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part2_full_char_01.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part2_full_char_02.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part2_full_char_03.png",
+      "text": ""
+    },
+    {
+      "name": "coinsinrush_part2_list_nor_char.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_01_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_01_2.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_02.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_03.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_04_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_04_2.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_04_3.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_05.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_06_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_coinsinrush_06_2.webp",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 71 to 8.75mb"
+}

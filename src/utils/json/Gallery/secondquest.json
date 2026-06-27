@@ -1,0 +1,85 @@
+{
+  "path": "secondquest/",
+  "type": "large",
+  "id": "secondquest",
+  "title": "Second Quest",
+  "content": [
+    {
+      "name": "EventScene_ce005_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_01_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_01_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_01_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_01_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_01_6.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_01_7.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_02_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_04_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_04_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_06_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_06_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_06_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_06_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_06_5.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_ce005_06_6.png",
+      "text": ""
+    }
+  ],
+  "notice": "Full sized images. Maybe not in order."
+}

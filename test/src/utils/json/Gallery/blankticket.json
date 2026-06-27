@@ -1,0 +1,28 @@
+{
+  "path": "blankticket/",
+  "type": "large",
+  "id": "blankticket",
+  "title": "Blank Ticket",
+  "content": [
+    {
+      "name": "blankticket_list_nor_top.png",
+      "text": ""
+    },
+    {
+      "name": "blankticket_main_bg_01_mid.png",
+      "text": ""
+    },
+    {
+      "name": "blankticket_main_bg_01.png",
+      "text": ""
+    },
+    {
+      "name": "blankticket_main_bg_02_mid.png",
+      "text": ""
+    },
+    {
+      "name": "blankticket_main_bg_02.png",
+      "text": ""
+    }
+  ]
+}

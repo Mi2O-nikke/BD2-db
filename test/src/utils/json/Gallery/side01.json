@@ -1,0 +1,28 @@
+{
+  "path": "side01/",
+  "type": "large",
+  "id": "side01",
+  "title": "Second Affection",
+  "content": [
+    {
+      "name": "EventScene_Side_01_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_01_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_01_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_01_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_Side_01_05.png",
+      "text": ""
+    }
+  ]
+}

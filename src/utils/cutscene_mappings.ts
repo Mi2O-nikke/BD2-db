@@ -125,8 +125,22 @@ const cutsceneComposites: Record<string, CutsceneCompositeEntry> = {
         "cut_A",
         "cut_A_front_arm"
       ]]
+    },
+    {
+      name: "cut_B_all",
+      composite: [
+        [
+          "cut_A_front_body",
+          "cut_A",
+          "cut_A_front_arm",
+          { name: "cut_A_curtain", hold: true }
+        ],
+        "cut_B"
+      ]
     }
-  ]
+  ],
+  "067103": [{ name: "cut_A_all", composite: ["cut_A", ["cut_B", { name: "curtain", offset: -0.5, hold: true }],"loop_2"] }],
+  "003892": [{ name: "cut_A_all", composite: ["cut_A", "cut_B"] }]
 }
 
 export default cutsceneComposites

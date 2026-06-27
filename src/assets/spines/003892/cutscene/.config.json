@@ -1,0 +1,26 @@
+{
+  "conf_ver": 1,
+  "type": 9,
+  "options": {
+    "tex_type": 0,
+    "edge_padding": false
+  },
+  "skeleton": "cutscene_char003892.skel",
+  "atlases": [
+    {
+      "atlas": "cutscene_char003892.atlas",
+      "tex_names": [
+        "cutscene_char003892",
+        "cutscene_char003892_2",
+        "cutscene_char003892_3",
+        "cutscene_char003892_4"
+      ],
+      "textures": [
+        "cutscene_char003892.png",
+        "cutscene_char003892_2.png",
+        "cutscene_char003892_3.png",
+        "cutscene_char003892_4.png"
+      ]
+    }
+  ]
+}

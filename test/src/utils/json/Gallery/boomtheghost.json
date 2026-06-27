@@ -1,0 +1,89 @@
+{
+  "path": "boomtheghost/",
+  "type": "large",
+  "id": "boomtheghost",
+  "title": "Boom the Ghost",
+  "content": [
+    {
+      "name": "boomtheghost_attendance_chr.png",
+      "text": ""
+    },
+    {
+      "name": "boomtheghost_main_part1_ghost_bg_01.png",
+      "text": ""
+    },
+    {
+      "name": "boomtheghost_main_part2_ex.png",
+      "text": ""
+    },
+    {
+      "name": "boomtheghost_opening_char_elegg.png",
+      "text": ""
+    },
+    {
+      "name": "boomtheghost_opening_fullshot.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_01_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_01_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_01_3.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_01_4.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_02_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_02_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_03_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_03_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_05_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_05_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_06_1.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_06_2.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_07.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_boomtheghost_08.png",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 60mb to 6mb"
+}

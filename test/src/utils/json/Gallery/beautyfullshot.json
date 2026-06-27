@@ -1,0 +1,56 @@
+{
+  "path": "beautyfullshot/",
+  "type": "large",
+  "id": "beautyfullshot",
+  "title": "Beauty Full Shot",
+  "content": [
+    {
+      "name": "beautyfullshot_album_bg.png",
+      "text": ""
+    },
+    {
+      "name": "beautyfullshot_hub_pic_01.png",
+      "text": ""
+    },
+    {
+      "name": "beautyfullshot_hub_pic_02.png",
+      "text": ""
+    },
+    {
+      "name": "beautyfullshot_hub_pic_03.png",
+      "text": ""
+    },
+    {
+      "name": "beautyfullshot_hub_pic_04.png",
+      "text": ""
+    },
+    {
+      "name": "beautyfullshot_opening_bg_after_exilegae.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_BeautyFullShot_01.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_BeautyFullShot_02.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_BeautyFullShot_03.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_BeautyFullShot_04.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_BeautyFullShot_05.png",
+      "text": ""
+    },
+    {
+      "name": "EventScene_BeautyFullShot_06.png",
+      "text": ""
+    }
+  ]
+}

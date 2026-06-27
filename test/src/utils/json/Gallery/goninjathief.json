@@ -1,0 +1,32 @@
+{
+  "path": "goninjathief/",
+  "type": "large",
+  "id": "goninjathief",
+  "title": "Go! Ninja Thief",
+  "content": [
+    {
+      "name": "goninjathief_list_hard_char.png",
+      "text": ""
+    },
+    {
+      "name": "goninjathief_main_char_delta.png",
+      "text": ""
+    },
+    {
+      "name": "goninjathief_main_char_miranda.png",
+      "text": ""
+    },
+    {
+      "name": "goninjathief_main_char_phantom.png",
+      "text": ""
+    },
+    {
+      "name": "goninjathief_main_char_poli.png",
+      "text": ""
+    },
+    {
+      "name": "goninjathief_main_char_quency.png",
+      "text": ""
+    }
+  ]
+}

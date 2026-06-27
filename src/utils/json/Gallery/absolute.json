@@ -1,0 +1,69 @@
+{
+  "path": "absolute/",
+  "type": "large",
+  "id": "absolute",
+  "title": "ABSOLUTE",
+  "content": [
+    {
+      "name": "absolute_main_part1_chr_01.webp",
+      "text": ""
+    },
+    {
+      "name": "absolute_main_part1_chr_02.webp",
+      "text": ""
+    },
+    {
+      "name": "absolute_main_part1_chr_03.webp",
+      "text": ""
+    },
+    {
+      "name": "absolute_main_part2_char_01.webp",
+      "text": ""
+    },
+    {
+      "name": "absolute_main_part2_char_02.webp",
+      "text": ""
+    },
+    {
+      "name": "absolute_main_part2_char_03.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_01_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_02_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_02_2.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_02_3.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_02_4.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_03_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_04_1.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_04_2.webp",
+      "text": ""
+    },
+    {
+      "name": "EventScene_absolute_05_1.webp",
+      "text": ""
+    }
+  ],
+  "notice": "Compressed from 39 to 2.4mb"
+}
