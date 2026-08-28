@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-full h-full">
+  <div class="relative w-full h-full" data-tutorial="character-viewer">
     <div
       ref="toolbarRef"
       class="absolute left-2 flex flex-col gap-2 pointer-events-auto transition-opacity duration-150"
@@ -39,16 +39,14 @@
         <button
           aria-label="Zoom out"
           @click="zoomOut"
-          :disabled="store.animationCategory === 'dating'"
-          class="w-8 h-8 p-1.5 rounded-md hidden lg:flex items-center justify-center bg-gray-800/70 hover:bg-gray-700/70 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-8 h-8 p-1.5 rounded-md hidden lg:flex items-center justify-center bg-gray-800/70 hover:bg-gray-700/70 text-white transition-colors"
         >
           <MinusIcon />
         </button>
         <button
           aria-label="Zoom in"
           @click="zoomIn"
-          :disabled="store.animationCategory === 'dating'"
-          class="w-8 h-8 p-1.5 rounded-md hidden lg:flex items-center justify-center bg-gray-800/70 hover:bg-gray-700/70 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-8 h-8 p-1.5 rounded-md hidden lg:flex items-center justify-center bg-gray-800/70 hover:bg-gray-700/70 text-white transition-colors"
         >
           <PlusIcon />
         </button>
@@ -113,6 +111,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted, onBeforeUnmount, computed, type CSSProperties } from 'vue'
 import { useCharacterStore } from '@/stores/characterStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import {
   SpinePlayer,
   Vector2,
@@ -126,23 +125,25 @@ import {
   Skeleton,
   SkeletonBinary,
   TrackEntry,
+  MeshAttachment,
+  RegionAttachment,
   type VertexAttachment,
   type SkeletonData,
   type Skeleton as SpineSkeleton,
 } from '@esotericsoftware/spine-player'
 import JSZip from 'jszip'
-import { HitAreaManager } from '@/utils/hitAreaManager'
-import hitAreaConfig, { CANVAS_WIDTH, CANVAS_HEIGHT, characterCameraConfig, datingSkinOverrideConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
 
 import type { Animation, SceneRenderer, Slot } from '@esotericsoftware/spine-player'
 import type { SpinePlayerInternal } from '@/types/spine-player-internal'
+import { HitAreaManager } from '@/utils/hitAreaManager'
+import { datingSkinOverrideConfig, characterCameraConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
+import hitAreaConfig from '@/utils/hitAreaConfig'
 import cutsceneComposites, {
   type CutsceneAnim,
   type CutsceneComposite,
   type CutsceneCompositeDefinition,
   type CutsceneCompositeEntry,
 } from '@/utils/cutscene_mappings'
-import { ultimateClickMotionConfig } from '@/utils/hitAreaConfig'
 
 import BgEditIcon from '@/components/icons/BgEditIcon.vue'
 import InspectAnimationIcon from '@/components/icons/InspectAnimationIcon.vue'
@@ -160,8 +161,13 @@ type CompositeSegment = {
   source: string | null
   skin?: string
   hold?: boolean
+  loop?: boolean
   holdUntil?: number
 }
+type CompiledComposite =
+  | { kind: 'animation'; spec: CutsceneAnim }
+  | { kind: 'sequence'; children: CompiledComposite[] }
+  | { kind: 'parallel'; children: CompiledComposite[] }
 type ResolvedCutsceneComposite = { name: string; mapping: CutsceneComposite }
 type CompositeOverlayInstance = {
   trackIndex: number
@@ -184,6 +190,20 @@ type SpineSlot = {
   attachment?: unknown
 }
 
+type CharacterClickCandidate = {
+  pointerId: number
+  startX: number
+  startY: number
+  moved: boolean
+  player: SpinePlayer
+  characterId: string
+}
+
+type CharacterAudioPool = {
+  key: string
+  clips: HTMLAudioElement[]
+}
+
 const container = ref<HTMLDivElement | null>(null)
 const viewerWrapper = ref<HTMLDivElement | null>(null)
 const toolbarRef = ref<HTMLDivElement | null>(null)
@@ -194,6 +214,7 @@ const overlayCanvas = ref<HTMLCanvasElement | null>(null)
 
 const progress = ref(0)
 const store = useCharacterStore()
+const settingsStore = useSettingsStore()
 
 const props = defineProps<{ mobileOverlayActive?: boolean; inspectMode?: boolean }>()
 const showingMobileOverlay = computed(() => props.mobileOverlayActive ?? false)
@@ -231,6 +252,13 @@ let activePointerMoveListener: ((event: PointerEvent) => void) | null = null
 const pointerStart = { x: 0, y: 0 }
 const initialRect = { x: 0, y: 0, width: 0, height: 0 }
 const MIN_BACKGROUND_SIZE = 60
+const CHARACTER_CLICK_DRAG_THRESHOLD = 6
+const CHARACTER_IDLE_ANIMATION = 'idle'
+const CHARACTER_MOTION_ANIMATION = 'motion'
+let characterClickCandidate: CharacterClickCandidate | null = null
+let characterAudioPool: CharacterAudioPool | null = null
+let activeCharacterAudio: HTMLAudioElement | null = null
+let nextCharacterAudioIndex = 0
 
 const backgroundReady = computed(() => backgroundImage.initialized && backgroundImage.width > 0 && backgroundImage.height > 0)
 const hasBackgroundImage = computed(() => backgroundReady.value)
@@ -286,14 +314,13 @@ const editButtonClasses = computed(() => [
 
 let player: SpinePlayer | null = null
 let hitAreaManager: HitAreaManager | null = null
+let hitAreaRenderHandle: number | null = null
 let recorder: MediaRecorder | null = null
 let cancelExport = false
 let exportingFrames = false
 let manualCamera: OrthoCamera | null = null
-let cameraController: any = null
 let defaultCameraPos = new Vector2()
 let defaultZoom = 0
-let initialSpineZoom = 0  // Store the original spine zoom before any animation zoom is applied
 const previousLayerVisibility = new Map<string, boolean>()
 let overlayInstances: CompositeOverlayInstance[] = []
 let overlayRenderHandle: number | null = null
@@ -310,16 +337,16 @@ let offset = new Vector2()
 let size = new Vector2()
 
 const DEFAULT_COMPOSITE_NAME = 'all'
+const resolvedCompositeCache = new WeakMap<CutsceneComposite, CompiledComposite>()
 let compositeActive = false
 let compositeDuration = 0
 let compositeElapsed = 0
 let compositeLastTimestamp: number | null = null
 let compositeSchedule: CompositeSegment[] = []
-let compositeMapping: CutsceneComposite | null = null
+let compositeMapping: CompiledComposite | null = null
 let compositeCharId: string | null = null
 let compositeRestarting = false
 let compositeStartToken = 0
-let lastCameraSegmentName: string | null = null
 let exportingAnimation = false
 let compositeLayerNames = new Set<string>()
 
@@ -339,11 +366,7 @@ function ensureGLTexturePremultiplyPatch() {
   proto.update = function (useMipMaps: boolean) {
     const gl = this.context.gl
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
-    originalUpdate.call(this, true)
-    // Enable high-quality texture filtering
-    gl.bindTexture(gl.TEXTURE_2D, this.texture)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    originalUpdate.call(this, useMipMaps)
   }
   proto[glTexturePatchedKey] = true
 }
@@ -370,33 +393,6 @@ function getActiveTrackIndexForSelectedAnimation(state: SpinePlayer['animationSt
     if (entry1?.animation?.name === anim) return 1
   }
   return 0
-}
-
-function applyCustomCamera(cameraConfig: CharacterCameraConfig) {
-  if (!player || !player.sceneRenderer) return
-
-  // Get or create manual camera if needed
-  if (!manualCamera) {
-    manualCamera = new OrthoCamera(
-      player.sceneRenderer.camera.viewportWidth,
-      player.sceneRenderer.camera.viewportHeight,
-    )
-    manualCamera.position.x = player.sceneRenderer.camera.position.x
-    manualCamera.position.y = player.sceneRenderer.camera.position.y
-    manualCamera.zoom = player.sceneRenderer.camera.zoom
-  }
-
-  // Apply camera settings
-  if (cameraConfig.zoom !== undefined) {
-    manualCamera.zoom = cameraConfig.zoom
-  }
-  if (cameraConfig.x !== undefined) {
-    manualCamera.position.x = cameraConfig.x
-  }
-  if (cameraConfig.y !== undefined) {
-    manualCamera.position.y = cameraConfig.y
-  }
-  manualCamera.update()
 }
 
 function setSpineAnimation(
@@ -515,7 +511,6 @@ function resetComposite() {
   compositeMapping = null
   compositeCharId = null
   compositeRestarting = false
-  lastCameraSegmentName = null
   stopOverlayRendering()
   disposeOverlays()
   removeCompositeLayerNames()
@@ -558,9 +553,61 @@ function getCompositesForCurrent(): ResolvedCutsceneComposite[] {
   return normalizeCompositeDefinitions(cutsceneComposites[store.selectedCharacterId])
 }
 
-function getCompositeForAnimation(animationName: string | null | undefined): CutsceneComposite | null {
+function compileCompositeSpec(
+  spec: CutsceneAnim,
+  definitions: Map<string, ResolvedCutsceneComposite>,
+  ancestors: string[],
+): CompiledComposite {
+  const nested = typeof spec === 'string' ? definitions.get(spec) : undefined
+  return nested
+    ? compileComposite(nested, definitions, ancestors)
+    : { kind: 'animation', spec }
+}
+
+function compileComposite(
+  definition: ResolvedCutsceneComposite,
+  definitions: Map<string, ResolvedCutsceneComposite>,
+  ancestors: string[] = [],
+): CompiledComposite {
+  const cached = resolvedCompositeCache.get(definition.mapping)
+  if (cached) return cached
+  if (ancestors.includes(definition.name)) {
+    throw new Error(`Circular composite reference: ${[...ancestors, definition.name].join(' -> ')}`)
+  }
+
+  const nextAncestors = [...ancestors, definition.name]
+  const compiled: CompiledComposite = {
+    kind: 'sequence',
+    children: definition.mapping.map(phase =>
+      Array.isArray(phase)
+        ? {
+            kind: 'parallel',
+            children: phase.map(spec => compileCompositeSpec(spec, definitions, nextAncestors)),
+          }
+        : compileCompositeSpec(phase, definitions, nextAncestors),
+    ),
+  }
+
+  resolvedCompositeCache.set(definition.mapping, compiled)
+  return compiled
+}
+
+function getCompositeForAnimation(animationName: string | null | undefined): CompiledComposite | null {
   if (!animationName) return null
-  return getCompositesForCurrent().find(definition => definition.name === animationName)?.mapping ?? null
+  const definitions = getCompositesForCurrent()
+  const selected = definitions.find(definition => definition.name === animationName)
+  if (!selected) return null
+  const definitionsByName = new Map<string, ResolvedCutsceneComposite>()
+  definitions.forEach(definition => {
+    if (!definitionsByName.has(definition.name)) definitionsByName.set(definition.name, definition)
+  })
+  return compileComposite(selected, definitionsByName)
+}
+
+function compositeHasParallel(mapping: CompiledComposite): boolean {
+  return mapping.kind === 'parallel' || (
+    mapping.kind === 'sequence' && mapping.children.some(compositeHasParallel)
+  )
 }
 
 function getAnimDuration(state: AnimationState | null | undefined, name: string) {
@@ -599,8 +646,32 @@ function getAnimSpecHold(spec: CutsceneAnim) {
   return typeof spec === 'string' ? false : spec.hold === true
 }
 
+function getAnimSpecLoop(spec: CutsceneAnim) {
+  return typeof spec === 'string' ? false : spec.loop === true
+}
+
+function getAnimSpecPlayDuration(spec: CutsceneAnim, nativeDuration: number) {
+  if (typeof spec === 'string') return nativeDuration
+  const requestedDuration = spec.playDuration
+  if (typeof requestedDuration !== 'number' || !Number.isFinite(requestedDuration) || requestedDuration <= 0) {
+    return nativeDuration
+  }
+  return Math.min(requestedDuration, nativeDuration)
+}
+
+function getAnimSpecLayerOrder(spec: CutsceneAnim) {
+  if (typeof spec === 'string') return 0
+  return typeof spec.layerOrder === 'number' && Number.isFinite(spec.layerOrder)
+    ? spec.layerOrder
+    : 0
+}
+
 function getSpineAssetRoot() {
   return import.meta.env.DEV ? 'src/assets/spines' : 'assets/spines'
+}
+
+function getAudioAssetRoot() {
+  return import.meta.env.DEV ? 'src/assets/audios' : 'assets/audios'
 }
 
 function getScopedLayerName(source: string | null, slotName: string) {
@@ -647,15 +718,17 @@ function resolveExternalSkeletonBasePath(source: string) {
   return `${getSpineAssetRoot()}/${store.selectedCharacterId}/${source}`
 }
 
-function collectCompositeSources(mapping: CutsceneComposite) {
+function collectCompositeSources(mapping: CompiledComposite) {
   const sources = new Set<string>()
-  mapping.forEach(segment => {
-    const specs = Array.isArray(segment) ? segment : [segment]
-    specs.forEach(spec => {
-      const source = getAnimSpecSource(spec)
+  const collect = (node: CompiledComposite) => {
+    if (node.kind === 'animation') {
+      const source = getAnimSpecSource(node.spec)
       if (source) sources.add(source)
-    })
-  })
+      return
+    }
+    node.children.forEach(collect)
+  }
+  collect(mapping)
   return sources
 }
 
@@ -686,7 +759,7 @@ async function getExternalSkeletonAsset(source: string): Promise<ExternalSkeleto
   return assetPromise
 }
 
-async function loadCompositeExternalAssets(mapping: CutsceneComposite) {
+async function loadCompositeExternalAssets(mapping: CompiledComposite) {
   const assets = new Map<string, ExternalSkeletonAsset>()
   await Promise.all(
     Array.from(collectCompositeSources(mapping)).map(async source => {
@@ -706,47 +779,85 @@ function getCompositeSegmentDuration(
   return getSkeletonAnimDuration(externalAssets.get(source)?.skeletonData, name)
 }
 
-function buildCompositeSchedule(
-  mapping: CutsceneComposite,
+function buildCompositeScheduleNode(
+  node: CompiledComposite,
   state: AnimationState | null | undefined,
-  externalAssets = new Map<string, ExternalSkeletonAsset>(),
-) {
-  const schedule: CompositeSegment[] = []
-  let phaseStart = 0
-
-  for (const segment of mapping) {
-    if (Array.isArray(segment)) {
-      let longest = 0
-      const phaseSegments = segment.map((animSpec, index) => {
-        const name = getAnimSpecName(animSpec)
-        const offsetValue = getAnimSpecOffset(animSpec)
-        const source = getAnimSpecSource(animSpec)
-        const skin = getAnimSpecSkin(animSpec)
-        const hold = getAnimSpecHold(animSpec)
-        const duration = getCompositeSegmentDuration(state, externalAssets, name, source)
-        const start = phaseStart + offsetValue
-        if (duration + offsetValue > longest) longest = duration + offsetValue
-        return { track: index, start, duration, name, additive: true, source, skin, hold }
-      })
-      const phaseEnd = phaseStart + longest
-      phaseSegments.forEach(segment => {
-        schedule.push(segment.hold ? { ...segment, holdUntil: phaseEnd } : segment)
-      })
-      phaseStart += longest
-    } else {
-      const name = getAnimSpecName(segment)
-      const offsetValue = getAnimSpecOffset(segment)
-      const source = getAnimSpecSource(segment)
-      const skin = getAnimSpecSkin(segment)
-      const hold = getAnimSpecHold(segment)
-      const duration = getCompositeSegmentDuration(state, externalAssets, name, source)
-      const start = phaseStart + offsetValue
-      schedule.push({ track: 0, start, duration, name, additive: false, source, skin, hold })
-      phaseStart += Math.max(duration + offsetValue, 0)
+  externalAssets: Map<string, ExternalSkeletonAsset>,
+  start: number,
+  track: number,
+  insideParallel = false,
+): { schedule: CompositeSegment[]; duration: number; trackCount: number } {
+  if (node.kind === 'animation') {
+    const name = getAnimSpecName(node.spec)
+    const offsetValue = getAnimSpecOffset(node.spec)
+    const source = getAnimSpecSource(node.spec)
+    const skin = getAnimSpecSkin(node.spec)
+    const hold = getAnimSpecHold(node.spec)
+    const loop = getAnimSpecLoop(node.spec)
+    const nativeDuration = getCompositeSegmentDuration(state, externalAssets, name, source)
+    const duration = getAnimSpecPlayDuration(node.spec, nativeDuration)
+    return {
+      schedule: [{ track, start: start + offsetValue, duration, name, additive: insideParallel, source, skin, hold, loop }],
+      duration: Math.max(duration + offsetValue, 0),
+      trackCount: 1,
     }
   }
 
-  const duration = schedule.reduce((max, seg) => Math.max(max, seg.start + seg.duration), 0)
+  if (node.kind === 'sequence') {
+    const schedule: CompositeSegment[] = []
+    let elapsed = 0
+    let trackCount = 1
+    node.children.forEach(child => {
+      const result = buildCompositeScheduleNode(
+        child,
+        state,
+        externalAssets,
+        start + elapsed,
+        track,
+        insideParallel,
+      )
+      schedule.push(...result.schedule)
+      elapsed += result.duration
+      trackCount = Math.max(trackCount, result.trackCount)
+    })
+    return { schedule, duration: elapsed, trackCount }
+  }
+
+  const orderedChildren = node.children
+    .map((child, index) => ({ child, index }))
+    .sort((a, b) => {
+      const aOrder = a.child.kind === 'animation' ? getAnimSpecLayerOrder(a.child.spec) : 0
+      const bOrder = b.child.kind === 'animation' ? getAnimSpecLayerOrder(b.child.spec) : 0
+      return aOrder - bOrder || a.index - b.index
+    })
+  const branches: Array<{ node: CompiledComposite; result: ReturnType<typeof buildCompositeScheduleNode> }> = []
+  let nextTrack = track
+  let duration = 0
+  orderedChildren.forEach(({ child }) => {
+    const result = buildCompositeScheduleNode(child, state, externalAssets, start, nextTrack, true)
+    branches.push({ node: child, result })
+    duration = Math.max(duration, result.duration)
+    nextTrack += Math.max(result.trackCount, 1)
+  })
+  const phaseEnd = start + duration
+  const schedule = branches.flatMap(branch => {
+    if (
+      branch.node.kind !== 'animation' ||
+      (!getAnimSpecHold(branch.node.spec) && !getAnimSpecLoop(branch.node.spec))
+    ) {
+      return branch.result.schedule
+    }
+    return branch.result.schedule.map(segment => ({ ...segment, holdUntil: phaseEnd }))
+  })
+  return { schedule, duration, trackCount: Math.max(nextTrack - track, 1) }
+}
+
+function buildCompositeSchedule(
+  mapping: CompiledComposite,
+  state: AnimationState | null | undefined,
+  externalAssets = new Map<string, ExternalSkeletonAsset>(),
+) {
+  const { schedule, duration } = buildCompositeScheduleNode(mapping, state, externalAssets, 0, 0)
   return { schedule, duration }
 }
 
@@ -756,7 +867,7 @@ function getCompositeSegmentEnd(segment: CompositeSegment, includeHold = true) {
     : segment.start + segment.duration
 }
 
-async function scheduleCompositeTimeline(p: SpinePlayer, mapping: CutsceneComposite, seekToSeconds = 0) {
+async function scheduleCompositeTimeline(p: SpinePlayer, mapping: CompiledComposite, seekToSeconds = 0) {
   const state = p.animationState
   const skeleton = p.skeleton
   if (!state || !skeleton) return { schedule: [], duration: 0, time: 0, externalAssets: new Map<string, ExternalSkeletonAsset>() }
@@ -795,26 +906,29 @@ function applySegmentsToState(
   if (hideWhenOutOfRange && time < current.start - EPS) {
     return
   }
-  const currentTime = Math.max(0, Math.min(current.duration, time - current.start))
-  const entry = state.setAnimation(0, current.name, false)
+  const elapsed = Math.max(0, time - current.start)
+  const currentTime = current.loop ? elapsed : Math.min(current.duration, elapsed)
+  const entry = state.setAnimation(0, current.name, current.loop)
   if (entry) {
     entry.mixDuration = 0
     entry.mixTime = 0
+    entry.animationEnd = current.duration
     entry.trackTime = currentTime
     entry.trackLast = currentTime
     entry.nextTrackLast = currentTime
   }
 
-  let prevEnd = getCompositeSegmentEnd(current)
+  let previous = current
   for (let i = currentIndex + 1; i < segments.length; i++) {
     const segment = segments[i]
-    const delay = Math.max(0, segment.start - prevEnd)
-    const nextEntry = state.addAnimation(0, segment.name, false, delay)
+    const delay = Math.max(Number.EPSILON, segment.start - previous.start)
+    const nextEntry = state.addAnimation(0, segment.name, segment.loop, delay)
     if (nextEntry) {
       nextEntry.mixDuration = 0
       nextEntry.mixTime = 0
+      nextEntry.animationEnd = segment.duration
     }
-    prevEnd = getCompositeSegmentEnd(segment)
+    previous = segment
   }
 
   state.apply(skeleton)
@@ -875,6 +989,9 @@ function compositeTracksActive(p: SpinePlayer | null): boolean {
 }
 
 function compositeTracksFinished(p: SpinePlayer | null): boolean {
+  if (compositeDuration > 0 && compositeSchedule.length > 0) {
+    return compositeElapsed >= compositeDuration - 1e-3
+  }
   if (compositeSchedule.some(segment => segment.source)) {
     return compositeDuration > 0 && compositeElapsed >= compositeDuration - 1e-3
   }
@@ -892,6 +1009,9 @@ function compositeTracksFinished(p: SpinePlayer | null): boolean {
 }
 
 function compositeTracksReachedAnimEnd(p: SpinePlayer | null): boolean {
+  if (compositeDuration > 0 && compositeSchedule.length > 0) {
+    return compositeElapsed >= compositeDuration - 1e-3
+  }
   if (compositeSchedule.some(segment => segment.source)) {
     return compositeDuration > 0 && compositeElapsed >= compositeDuration - 1e-3
   }
@@ -941,11 +1061,12 @@ function currentCompositeTime(p: SpinePlayer | null) {
         !item.source &&
         item.track === trackIndex &&
         item.name === track.animation?.name &&
-        (track.trackTime ?? 0) <= item.duration + 0.01,
+        (track.trackTime ?? 0) <= getCompositeSegmentEnd(item) - item.start + 0.01,
     )
     if (!segment) return
     hasTracks = true
-    const trackTime = Math.max(0, Math.min(segment.duration, track.trackTime ?? 0))
+    const scheduledDuration = getCompositeSegmentEnd(segment) - segment.start
+    const trackTime = Math.max(0, Math.min(scheduledDuration, track.trackTime ?? 0))
     maxTime = Math.max(maxTime, segment.start + trackTime)
   })
   return { time: hasTracks ? maxTime : compositeElapsed, hasTracks }
@@ -960,34 +1081,6 @@ function renderCompositeFrame(timestamp?: number) {
   if (overlayLastTimestamp === null) overlayLastTimestamp = now
   const delta = (now - overlayLastTimestamp) / 1000
   overlayLastTimestamp = now
-
-  // Update camera based on current composite segment
-  const charId = store.selectedCharacterId
-  const motionConfig = ultimateClickMotionConfig[charId]
-  if (motionConfig && compositeSchedule.length > 0) {
-    const activeSegments = compositeSchedule.filter(seg => seg.start <= compositeElapsed && compositeElapsed < seg.start + seg.duration && !seg.source)
-    if (activeSegments.length > 0) {
-      const currentSegmentName = activeSegments[0].name
-      if (currentSegmentName !== lastCameraSegmentName) {
-        lastCameraSegmentName = currentSegmentName
-        const hasMatch = motionConfig.cameraByAnimation?.[currentSegmentName]
-        if (hasMatch) {
-          applyCustomCamera(motionConfig.cameraByAnimation[currentSegmentName])
-          // Update defaultZoom so reset (Z key) returns to the segment-specific zoom
-          if (manualCamera) {
-            defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
-            defaultZoom = manualCamera.zoom
-          }
-        } else {
-          // Reset camera to initial spine zoom only (keep position)
-          if (manualCamera) {
-            manualCamera.zoom = initialSpineZoom
-            manualCamera.update()
-          }
-        }
-      }
-    }
-  }
 
   if (manualCamera) {
     const cam = renderer.camera
@@ -1068,48 +1161,12 @@ function advanceCompositeStates(deltaSeconds: number) {
 }
 
 function renderCompositeOnce() {
-  console.log('[renderCompositeOnce] compositeActive:', compositeActive, 'compositeSchedule.length:', compositeSchedule.length, 'compositeElapsed:', compositeElapsed)
   if (!player || !player.skeleton || !player.sceneRenderer) return
   const { time, hasTracks } = currentCompositeTime(player)
   if (hasTracks) {
     compositeElapsed = time
   }
   const renderer = player.sceneRenderer
-  
-  // Update camera based on current composite segment
-  const charId = store.selectedCharacterId
-  const motionConfig = ultimateClickMotionConfig[charId]
-  if (motionConfig && compositeSchedule.length > 0) {
-    const activeSegments = compositeSchedule.filter(seg => seg.start <= compositeElapsed && compositeElapsed < seg.start + seg.duration && !seg.source)
-    if (activeSegments.length > 0) {
-      const currentSegmentName = activeSegments[0].name
-      if (currentSegmentName !== lastCameraSegmentName) {
-        lastCameraSegmentName = currentSegmentName
-        // DEBUG: Log segment matching info
-        console.log('[Camera Debug - Line ~1073] Current segment:', currentSegmentName)
-        console.log('[Camera Debug - Line ~1073] Available keys in cameraByAnimation:', Object.keys(motionConfig.cameraByAnimation || {}))
-        const hasMatch = motionConfig.cameraByAnimation?.[currentSegmentName]
-        console.log('[Camera Debug - Line ~1073] Match found:', !!hasMatch)
-        if (hasMatch) {
-          console.log('[Camera Debug - Line ~1073] Applying camera config:', motionConfig.cameraByAnimation[currentSegmentName])
-          applyCustomCamera(motionConfig.cameraByAnimation[currentSegmentName])
-          // Update defaultZoom so reset (Z key) returns to the segment-specific zoom
-          if (manualCamera) {
-            defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
-            defaultZoom = manualCamera.zoom
-          }
-        } else {
-          console.log('[Camera Debug - Line ~1073] No match - resetting to initial spine zoom')
-          // Reset camera to initial spine zoom only (keep position)
-          if (manualCamera) {
-            manualCamera.zoom = initialSpineZoom
-            manualCamera.update()
-          }
-        }
-      }
-    }
-  }
-  
   if (manualCamera) {
     const cam = renderer.camera
     cam.position.x = manualCamera.position.x
@@ -1137,7 +1194,7 @@ function renderCompositeOnce() {
   drawOverlay()
 }
 
-async function startComposite(p: SpinePlayer, mapping: CutsceneComposite, seekToSeconds = 0) {
+async function startComposite(p: SpinePlayer, mapping: CompiledComposite, seekToSeconds = 0) {
   const state = p.animationState
   const skeleton = p.skeleton
   if (!state || !skeleton) return
@@ -1155,23 +1212,6 @@ async function startComposite(p: SpinePlayer, mapping: CutsceneComposite, seekTo
   compositeMapping = mapping
   compositeCharId = store.selectedCharacterId
   progress.value = duration > 0 ? time / duration : 0
-  
-  // Initialize default camera position for resetting between segments
-  // Save the current camera state BEFORE any segment-specific zoom is applied
-  if (!manualCamera && player?.sceneRenderer) {
-    manualCamera = new OrthoCamera(
-      player.sceneRenderer.camera.viewportWidth,
-      player.sceneRenderer.camera.viewportHeight,
-    )
-    manualCamera.position.x = player.sceneRenderer.camera.position.x
-    manualCamera.position.y = player.sceneRenderer.camera.position.y
-    manualCamera.zoom = player.sceneRenderer.camera.zoom
-  }
-  if (manualCamera) {
-    defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
-    defaultZoom = manualCamera.zoom
-  }
-  lastCameraSegmentName = null  // Reset to force camera update on first segment
 
   const perLayer = new Map<string, { trackIndex: number; source: string | null; segments: CompositeSegment[] }>()
   schedule.forEach(segment => {
@@ -1212,29 +1252,6 @@ async function startComposite(p: SpinePlayer, mapping: CutsceneComposite, seekTo
       renderCompositeOnce()
     }
   } else {
-    // For composites without overlays, apply initial camera BEFORE rendering
-    // This prevents showing unzoomed frame before zoom applies
-    const charId = store.selectedCharacterId
-    const motionConfig = ultimateClickMotionConfig[charId]
-    if (motionConfig && compositeSchedule.length > 0) {
-      // Apply segment-specific camera if available
-      const activeSegments = compositeSchedule.filter(seg => seg.start <= compositeElapsed && compositeElapsed < seg.start + seg.duration && !seg.source)
-      if (activeSegments.length > 0) {
-        const segmentName = activeSegments[0].name
-        if (motionConfig.cameraByAnimation?.[segmentName]) {
-          applyCustomCamera(motionConfig.cameraByAnimation[segmentName])
-          if (manualCamera) {
-            defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
-            defaultZoom = manualCamera.zoom
-          }
-        }
-      }
-    }
-    // Start monitoring segment progress
-    if (compositeElapsedWatchHandle !== null) {
-      clearInterval(compositeElapsedWatchHandle)
-    }
-    compositeElapsedWatchHandle = setTimeout(checkCompositeSegmentProgress, compositeElapsedCheckInterval)
     startPlayerRenderLoop(p)
     ;(p as unknown as SpinePlayerInternal).drawFrame(false)
   }
@@ -1531,12 +1548,6 @@ function ensureResizeObserver() {
       backgroundImage.width *= widthRatio
       backgroundImage.height *= heightRatio
     }
-    // Resize the Spine player's canvas when container size changes to fix distortion
-    if (player && player.canvas && (width !== prevWidth || height !== prevHeight)) {
-      player.canvas.width = width
-      player.canvas.height = height
-      requestViewerRedraw()
-    }
   })
   resizeObserver.observe(viewerWrapper.value)
 }
@@ -1720,7 +1731,7 @@ function getCompositeDataURL(canvasElement: HTMLCanvasElement, transparent: bool
   return offscreen.toDataURL('image/png')
 }
 
-const emit = defineEmits(['animations', 'skins', 'update:inspectMode'])
+const emit = defineEmits(['animations', 'skins', 'update:inspectMode', 'character-interaction'])
 
 function requestViewerRedraw() {
   requestAnimationFrame(() => {
@@ -1785,6 +1796,7 @@ watch(activeBackgroundSrc, src => {
 
 async function load() {
   if (!container.value) return
+  clearCharacterClickTracking()
 
   const char = store.characters.find(c => c.id === store.selectedCharacterId)
   if (!char) return
@@ -2007,8 +2019,7 @@ async function load() {
         bounds = applySkinAndMeasure(fallbackSkin)
       }
 
-      // Only update store.selectedSkin if not in dating mode with override
-      if (!datingOverrideSkin && chosenSkin && store.selectedSkin !== chosenSkin) {
+      if (chosenSkin && store.selectedSkin !== chosenSkin) {
         store.selectedSkin = chosenSkin
       }
 
@@ -2052,7 +2063,6 @@ async function load() {
       manualCamera.update()
       defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
       defaultZoom = manualCamera.zoom
-      initialSpineZoom = manualCamera.zoom  // Store original spine zoom before character-specific overrides
       
       // Apply character-specific camera settings ONLY in dating mode
       if (store.animationCategory === 'dating') {
@@ -2075,37 +2085,16 @@ async function load() {
       
       // Only create CameraController if NOT in dating mode
       if (store.animationCategory !== 'dating') {
-        cameraController = new CameraController(p.canvas!, manualCamera)
+        new CameraController(p.canvas!, manualCamera)
       }
-      
       if (detachCameraListeners) detachCameraListeners()
       const handlePointerMove = () => requestPausedCompositeRender()
-      
-      // Handle wheel events for zoom (disabled in dating mode)
-      const wheelBlocker = (e: WheelEvent) => {
-        if (store.animationCategory !== 'dating') {
-          e.preventDefault()
-          e.stopPropagation()
-          e.stopImmediatePropagation()
-          
-          // Scroll up = zoom in (negative deltaY), scroll down = zoom out (positive deltaY)
-          const direction = e.deltaY > 0 ? 1 : -1
-          const newZoom = manualCamera!.zoom * Math.pow(ZOOM_STEP_FACTOR, direction)
-          setCameraZoom(newZoom)
-        } else {
-          // Still prevent default scrolling in dating mode
-          e.preventDefault()
-          e.stopPropagation()
-          e.stopImmediatePropagation()
-        }
-        requestPausedCompositeRender()
-      }
-      
+      const handleWheel = () => requestPausedCompositeRender()
       canvas.addEventListener('pointermove', handlePointerMove)
-      canvas.addEventListener('wheel', wheelBlocker, { capture: true, passive: false })
+      canvas.addEventListener('wheel', handleWheel, { passive: true })
       detachCameraListeners = () => {
         canvas.removeEventListener('pointermove', handlePointerMove)
-        canvas.removeEventListener('wheel', wheelBlocker, true)
+        canvas.removeEventListener('wheel', handleWheel)
       }
 
       selectAnimation()
@@ -2124,6 +2113,7 @@ async function load() {
   updateCanvasPointerEvents(player)
 }
 watch(() => store.selectedCharacterId, () => {
+  preloadSelectedCharacterAudio()
   if (recorder && recorder.state === 'recording') {
     cancelExport = true
     recorder.stop()
@@ -2136,7 +2126,8 @@ watch(() => store.selectedCharacterId, () => {
   void load()
 })
 
-watch(() => store.animationCategory, () => {
+watch(() => store.animationCategory, category => {
+  if (category !== 'character') stopCharacterAudio()
   if (recorder && recorder.state === 'recording') {
     cancelExport = true
     recorder.stop()
@@ -2148,21 +2139,8 @@ watch(() => store.animationCategory, () => {
   void load()
 })
 
-watch(() => store.animationCategory, (category) => {
-  if (category === 'ultimate' && player) {
-    // Play default animation when entering ultimate mode
-    const charId = store.selectedCharacterId
-    const motionConfig = ultimateClickMotionConfig[charId]
-    if (motionConfig) {
-      resetComposite()
-      startPlayerRenderLoop(player)
-      // Set selectedAnimation to trigger the watcher which will load the composite
-      store.selectedAnimation = motionConfig.default
-    }
-  }
-})
-
 watch(() => store.selectedAnimation, anim => {
+  if (anim !== CHARACTER_IDLE_ANIMATION) stopCharacterAudio()
   if (recorder && recorder.state === 'recording') {
     cancelExport = true
     recorder.stop()
@@ -2178,91 +2156,13 @@ watch(() => store.selectedAnimation, anim => {
       void startComposite(player, mapping, 0)
     } else {
       resetComposite()
-      
-      // Apply camera settings BEFORE rendering any frames
-      // This prevents the 0.1s unzoomed frame before zoom applies
-      const charId = store.selectedCharacterId
-      const motionConfig = ultimateClickMotionConfig[charId]
-      if (motionConfig && anim && motionConfig.cameraByAnimation?.[anim]) {
-        applyCustomCamera(motionConfig.cameraByAnimation[anim])
-        // Update default camera position/zoom for ultimate mode
-        if (manualCamera) {
-          defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
-          defaultZoom = manualCamera.zoom
-        }
-      }
-      
       startPlayerRenderLoop(player)
-      
-      // In ultimate mode, animations always loop
-      if (store.animationCategory === 'ultimate') {
-        setSpineAnimation(player, anim, { loop: true })
-      } else {
-        setSpineAnimation(player, anim, { loop: true })
-      }
+      setSpineAnimation(player, anim, { loop: true })
     }
-    
     store.playing = true
     player.play()
   }
-  
-  // Reload hit areas if visible (in case animation-specific hit areas changed)
-  if (hitAreaManager?.isVisible()) {
-    const areas = getHitAreasForCurrentState()
-    if (areas) {
-      hitAreaManager.loadAreas(areas)
-    }
-  }
 })
-
-// Watch for composite animation progress to update camera per segment
-let compositeElapsedWatchHandle: number | null = null
-const compositeElapsedCheckInterval = 16 // ~60fps
-
-function checkCompositeSegmentProgress() {
-  if (!compositeActive || !player || compositeSchedule.length === 0) {
-    if (compositeElapsedWatchHandle !== null) {
-      clearInterval(compositeElapsedWatchHandle)
-      compositeElapsedWatchHandle = null
-    }
-    return
-  }
-
-  const charId = store.selectedCharacterId
-  const motionConfig = ultimateClickMotionConfig[charId]
-  if (!motionConfig) return
-
-  // Update compositeElapsed based on current track time
-  const { time } = currentCompositeTime(player)
-  compositeElapsed = time
-
-  // Find current active segment
-  const activeSegments = compositeSchedule.filter(
-    seg => seg.start <= compositeElapsed && compositeElapsed < seg.start + seg.duration && !seg.source
-  )
-  
-  if (activeSegments.length > 0) {
-    const currentSegmentName = activeSegments[0].name
-    if (currentSegmentName !== lastCameraSegmentName) {
-      lastCameraSegmentName = currentSegmentName
-      if (motionConfig.cameraByAnimation?.[currentSegmentName]) {
-        applyCustomCamera(motionConfig.cameraByAnimation[currentSegmentName])
-        // Update defaultZoom so reset (Z key) returns to the segment-specific zoom
-        if (manualCamera) {
-          defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
-          defaultZoom = manualCamera.zoom
-        }
-      } else {
-        if (manualCamera) {
-          manualCamera.zoom = initialSpineZoom
-          manualCamera.update()
-        }
-      }
-    }
-  }
-
-  compositeElapsedWatchHandle = setTimeout(checkCompositeSegmentProgress, compositeElapsedCheckInterval)
-}
 
 watch(() => store.selectedSkin, skin => {
   if (player && skin) {
@@ -2297,6 +2197,7 @@ watch(() => store.playing, playing => {
     }
     player.play()
   } else {
+    stopCharacterAudio()
     compositeLastTimestamp = null
     overlayLastTimestamp = null
     stopOverlayRendering()
@@ -2306,6 +2207,10 @@ watch(() => store.playing, playing => {
 
 watch(() => store.animationSpeed, speed => {
   if (player) player.speed = speed
+})
+
+watch(() => settingsStore.audioLanguage, () => {
+  preloadSelectedCharacterAudio()
 })
 
 watch(() => store.backgroundColor, () => {
@@ -2339,6 +2244,24 @@ function isPointInPolygon(px: number, py: number, vertices: Float32Array): boole
   return inside
 }
 
+function isPointInTriangle(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  cx: number,
+  cy: number,
+) {
+  const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by)
+  const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy)
+  const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay)
+  const hasNegative = d1 < 0 || d2 < 0 || d3 < 0
+  const hasPositive = d1 > 0 || d2 > 0 || d3 > 0
+  return !(hasNegative && hasPositive)
+}
+
 function getCameraState() {
   const renderCam = player?.sceneRenderer?.camera
   if (!renderCam) return null
@@ -2351,59 +2274,270 @@ function getCameraState() {
   }
 }
 
+function getWorldPoint(clientX: number, clientY: number) {
+  const bounds = viewerWrapper.value?.getBoundingClientRect()
+  const camState = getCameraState()
+  if (!bounds || bounds.width <= 0 || bounds.height <= 0 || !camState) return null
+
+  const screenX = clientX - bounds.left
+  const screenY = clientY - bounds.top
+  const nx = (screenX / bounds.width) * 2 - 1
+  const ny = 1 - 2 * (screenY / bounds.height)
+  const { cx, cy, zoom, vw, vh } = camState
+
+  return {
+    x: nx * (vw / 2) * zoom + cx,
+    y: ny * (vh / 2) * zoom + cy,
+  }
+}
+
+function isRenderableAttachmentHit(slot: Slot, worldX: number, worldY: number) {
+  const attachment = slot.getAttachment()
+  if (!attachment) return false
+
+  if (attachment instanceof RegionAttachment) {
+    if (attachment.color.a <= 0) return false
+    const worldVertices = new Float32Array(8)
+    attachment.computeWorldVertices(slot, worldVertices, 0, 2)
+    return isPointInPolygon(worldX, worldY, worldVertices)
+  }
+
+  if (attachment instanceof MeshAttachment) {
+    if (attachment.color.a <= 0 || attachment.worldVerticesLength <= 0) return false
+    const worldVertices = new Float32Array(attachment.worldVerticesLength)
+    attachment.computeWorldVertices(slot, 0, attachment.worldVerticesLength, worldVertices, 0, 2)
+
+    for (let i = 0; i + 2 < attachment.triangles.length; i += 3) {
+      const a = attachment.triangles[i] * 2
+      const b = attachment.triangles[i + 1] * 2
+      const c = attachment.triangles[i + 2] * 2
+      if (
+        isPointInTriangle(
+          worldX,
+          worldY,
+          worldVertices[a],
+          worldVertices[a + 1],
+          worldVertices[b],
+          worldVertices[b + 1],
+          worldVertices[c],
+          worldVertices[c + 1],
+        )
+      ) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
+function isCharacterHit(clientX: number, clientY: number) {
+  const skeleton = player?.skeleton
+  const worldPoint = getWorldPoint(clientX, clientY)
+  if (!skeleton || !worldPoint || skeleton.color.a <= 0) return false
+
+  for (let i = skeleton.drawOrder.length - 1; i >= 0; i--) {
+    const slot = skeleton.drawOrder[i]
+    const slotName = slot.data.name
+    if (isBackgroundSlot(slotName) || store.layerVisibility[slotName] === false || slot.color.a <= 0) continue
+    if (isRenderableAttachmentHit(slot, worldPoint.x, worldPoint.y)) return true
+  }
+
+  return false
+}
+
+function getSelectedCharacterAudioConfig() {
+  const character = selectedCharacter.value
+  const audioName = character?.audio?.trim()
+  if (!character || !audioName) return null
+
+  const audioCharacterId = character.id
+  if (!/^\d+(?:_c)?$/i.test(audioCharacterId)) return null
+
+  const language = settingsStore.audioLanguage
+  return {
+    key: `${audioCharacterId}/${language}/${audioName}`,
+    urls: [1, 2, 3].map(
+      index => `${getAudioAssetRoot()}/${audioCharacterId}/${language}/${audioName}_${index}.webm`,
+    ),
+  }
+}
+
+function stopCharacterAudio() {
+  const audio = activeCharacterAudio
+  activeCharacterAudio = null
+  if (!audio) return
+
+  audio.pause()
+  try {
+    audio.currentTime = 0
+  } catch {
+    // Metadata may not be available yet; pausing is enough in that case.
+  }
+}
+
+function clearCharacterAudioPool() {
+  stopCharacterAudio()
+  characterAudioPool?.clips.forEach(audio => {
+    audio.pause()
+    audio.removeAttribute('src')
+    audio.load()
+  })
+  characterAudioPool = null
+  nextCharacterAudioIndex = 0
+}
+
+function preloadSelectedCharacterAudio() {
+  const config = getSelectedCharacterAudioConfig()
+  if (config && characterAudioPool?.key === config.key) return
+
+  clearCharacterAudioPool()
+  if (!config) return
+
+  const clips = config.urls.map(url => {
+    const audio = new Audio()
+    audio.preload = 'auto'
+    audio.src = url
+    audio.addEventListener('ended', () => {
+      if (activeCharacterAudio === audio) activeCharacterAudio = null
+    })
+    audio.load()
+    return audio
+  })
+  characterAudioPool = { key: config.key, clips }
+}
+
+function playNextCharacterAudio() {
+  const config = getSelectedCharacterAudioConfig()
+  if (!config) return
+  if (characterAudioPool?.key !== config.key) preloadSelectedCharacterAudio()
+
+  const clips = characterAudioPool?.clips
+  if (!clips?.length) return
+
+  stopCharacterAudio()
+  const audio = clips[nextCharacterAudioIndex % clips.length]
+  nextCharacterAudioIndex = (nextCharacterAudioIndex + 1) % clips.length
+  activeCharacterAudio = audio
+  try {
+    audio.currentTime = 0
+  } catch {
+    // play() will begin at the start when metadata has not loaded yet.
+  }
+  void audio.play().catch(() => {
+    if (activeCharacterAudio === audio) activeCharacterAudio = null
+  })
+}
+
+function canTriggerCharacterMotion() {
+  if (
+    !player ||
+    store.animationCategory !== 'character' ||
+    store.selectedAnimation !== CHARACTER_IDLE_ANIMATION ||
+    !store.playing ||
+    store.layerSelectionEnabled ||
+    editingBackground.value ||
+    isDraggingBackground.value ||
+    isResizingBackground.value ||
+    showingMobileOverlay.value ||
+    exportingAnimation ||
+    exportingFrames ||
+    compositeActive ||
+    forceTransparentClear ||
+    activePointerId !== null ||
+    (recorder !== null && recorder.state !== 'inactive')
+  ) {
+    return false
+  }
+
+  const state = player.animationState
+  const current = state?.getCurrent(0)
+  if (!state || current?.animation?.name !== CHARACTER_IDLE_ANIMATION || current.next) return false
+
+  return state.data.skeletonData.animations.some(animation => animation.name === CHARACTER_MOTION_ANIMATION)
+}
+
+function playCharacterMotion() {
+  if (!player || !canTriggerCharacterMotion()) return false
+  const state = player.animationState
+  if (!state) return false
+  const motionAnimation = state.data.skeletonData.animations.find(
+    animation => animation.name === CHARACTER_MOTION_ANIMATION,
+  )
+  if (!motionAnimation) return false
+
+  state.setAnimation(0, CHARACTER_MOTION_ANIMATION, false)
+  state.addAnimation(0, CHARACTER_IDLE_ANIMATION, true, motionAnimation.duration)
+  return true
+}
+
+function clearCharacterClickTracking() {
+  window.removeEventListener('pointermove', onCharacterClickPointerMove, true)
+  window.removeEventListener('pointerup', onCharacterClickPointerUp, true)
+  window.removeEventListener('pointercancel', onCharacterClickPointerCancel, true)
+  characterClickCandidate = null
+}
+
+function onCharacterClickPointerMove(event: PointerEvent) {
+  const candidate = characterClickCandidate
+  if (!candidate || event.pointerId !== candidate.pointerId || candidate.moved) return
+  const dx = event.clientX - candidate.startX
+  const dy = event.clientY - candidate.startY
+  if (Math.hypot(dx, dy) > CHARACTER_CLICK_DRAG_THRESHOLD) {
+    candidate.moved = true
+  }
+}
+
+function onCharacterClickPointerUp(event: PointerEvent) {
+  const candidate = characterClickCandidate
+  if (!candidate || event.pointerId !== candidate.pointerId) return
+
+  const isClick = !candidate.moved
+  const isSameViewer = candidate.player === player && candidate.characterId === store.selectedCharacterId
+  clearCharacterClickTracking()
+
+  if (isClick && isSameViewer && canTriggerCharacterMotion() && isCharacterHit(event.clientX, event.clientY)) {
+    if (playCharacterMotion()) {
+      playNextCharacterAudio()
+      emit('character-interaction')
+    }
+  }
+}
+
+function onCharacterClickPointerCancel(event: PointerEvent) {
+  if (event.pointerId === characterClickCandidate?.pointerId) {
+    clearCharacterClickTracking()
+  }
+}
+
+function startCharacterClickTracking(event: PointerEvent) {
+  clearCharacterClickTracking()
+  if (!player || !event.isPrimary || !canTriggerCharacterMotion()) return
+
+  characterClickCandidate = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    moved: false,
+    player,
+    characterId: store.selectedCharacterId,
+  }
+  window.addEventListener('pointermove', onCharacterClickPointerMove, true)
+  window.addEventListener('pointerup', onCharacterClickPointerUp, true)
+  window.addEventListener('pointercancel', onCharacterClickPointerCancel, true)
+}
+
 function onViewerPointerDown(e: PointerEvent) {
   if (!player || editingBackground.value) return
   if (e.button !== 0) return
 
-  // In character mode, clicking plays the "motion" animation
-  if (store.animationCategory === 'character') {
-    resetComposite()
-    startPlayerRenderLoop(player)
-    setSpineAnimation(player, 'motion', { loop: false })
-    store.playing = true
-    player.play()
-    
-    // Queue "idle" animation to play after "motion" finishes
-    const state = player.animationState
-    if (state) {
-      const motionEntry = state.getCurrent(0)
-      if (motionEntry && motionEntry.animation) {
-        const motionDuration = motionEntry.animation.duration
-        // Add idle after motion finishes
-        state.addAnimation(0, 'idle', true, motionDuration)
-      }
-    }
+  if (!store.layerSelectionEnabled) {
+    startCharacterClickTracking(e)
     return
   }
 
-  // Ultimate mode - no click interaction, animation plays automatically
-  // Clicks are disabled in ultimate mode
-  if (store.animationCategory === 'ultimate') {
-    return
-  }
-
-  // Layer selection mode (for dating mode)
-  if (!store.layerSelectionEnabled) return
-
-  const bounds = viewerWrapper.value?.getBoundingClientRect()
-  if (!bounds) return
-
-  const camState = getCameraState()
-  if (!camState) return
-
-  const screenX = e.clientX - bounds.left
-  const screenY = e.clientY - bounds.top
-
-  const { cx, cy, zoom, vw, vh } = camState
-
-  const nx = (screenX / bounds.width) * 2 - 1
-  const ny = 1 - 2 * (screenY / bounds.height)
-
-  const wx = nx * (vw / 2) * zoom + cx
-  const wy = ny * (vh / 2) * zoom + cy
-
-  // Log click position for debugging motion placement
-  console.log(`📍 Click Position: Screen(${Math.round(screenX)}, ${Math.round(screenY)}) → World(${Math.round(wx * 100) / 100}, ${Math.round(wy * 100) / 100})`)
+  const worldPoint = getWorldPoint(e.clientX, e.clientY)
+  if (!worldPoint) return
 
   const slots = player.skeleton?.drawOrder
   if (!slots) return
@@ -2418,7 +2552,7 @@ function onViewerPointerDown(e: PointerEvent) {
     if (attachment && vertexCount > 0 && typeof attachment.computeWorldVertices === 'function') {
       const worldVertices = new Float32Array(vertexCount)
       attachment.computeWorldVertices(slot as Slot, 0, vertexCount, worldVertices, 0, 2)
-      if (isPointInPolygon(wx, wy, worldVertices)) {
+      if (isPointInPolygon(worldPoint.x, worldPoint.y, worldVertices)) {
         if (store.selectedLayerName !== slot.data.name) {
           store.selectedLayerName = slot.data.name
         } else {
@@ -2505,8 +2639,6 @@ function onKeyDown(e: KeyboardEvent) {
       store.layerVisibility[last] = true
       store.selectedLayerName = last
     }
-  } else if (key === 'z') {
-    resetCamera()
   } else if (e.key === 'Escape') {
     while (store.hiddenLayerStack.length > 0) {
       const last = store.hiddenLayerStack.pop()!
@@ -2519,24 +2651,18 @@ function onKeyDown(e: KeyboardEvent) {
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
   ensureResizeObserver()
-  // Initialize hit area manager early so it's ready for clicks
-  initHitAreaManager()
   if (activeBackgroundSrc.value) {
     setBackgroundSource(activeBackgroundSrc.value)
   }
+  preloadSelectedCharacterAudio()
   void load()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeyDown)
+  clearCharacterClickTracking()
+  clearCharacterAudioPool()
   stopPointerTracking()
-  
-  // Clean up hit area click listener
-  if (container.value) {
-    container.value.removeEventListener('click', onHitAreaClick as EventListener)
-    delete container.value.dataset.hitAreaListenerAdded
-  }
-  stopHitAreaRender()
   resetComposite()
   clearExternalSkeletonCache()
   if (compositeFrameHandle !== null) {
@@ -2583,20 +2709,9 @@ function seek() {
 
 function resetCamera() {
   if (!manualCamera) return
-  
-  const charId = store.selectedCharacterId
-  const motionConfig = ultimateClickMotionConfig[charId]
-  
   manualCamera.position.x = defaultCameraPos.x
   manualCamera.position.y = defaultCameraPos.y
-  
-  // If current animation has custom zoom config, use it. Otherwise use initial spine zoom.
-  if (motionConfig && lastCameraSegmentName && motionConfig.cameraByAnimation?.[lastCameraSegmentName]) {
-    manualCamera.zoom = motionConfig.cameraByAnimation[lastCameraSegmentName].zoom
-  } else {
-    manualCamera.zoom = initialSpineZoom
-  }
-  
+  manualCamera.zoom = defaultZoom
   manualCamera.update()
   if (compositeActive && overlayInstances.length > 0 && !store.playing) {
     requestPausedCompositeRender()
@@ -2631,67 +2746,6 @@ function zoomOut() {
   setCameraZoom(manualCamera.zoom * ZOOM_STEP_FACTOR)
 }
 
-function setYappingMode(enabled: boolean, idleAnim?: string, talkAnim?: string) {
-  console.log('setYappingMode called', { enabled, idleAnim, talkAnim, playerReady: !!player })
-  
-  if (!player || !player.animationState || !player.skeleton) {
-    console.error('Player not ready for yapping mode')
-    return
-  }
-  
-  const state = player.animationState
-  const skeleton = player.skeleton
-  
-  if (enabled && idleAnim && talkAnim) {
-    console.log('Enabling yapping mode with idle:', idleAnim, 'talk:', talkAnim)
-    
-    // Clear existing tracks
-    state.clearTracks()
-    skeleton.setToSetupPose()
-    skeleton.setSlotsToSetupPose()
-    skeleton.updateWorldTransform()
-    
-    // Play idle on track 0
-    const idleEntry = state.setAnimation(0, idleAnim, true)
-    console.log('Set idle animation on track 0:', idleEntry)
-    
-    if (idleEntry) {
-      idleEntry.mixDuration = 0
-      idleEntry.mixTime = 0
-    }
-    
-    // Play talk animation on track 1
-    const talkEntry = state.setAnimation(1, talkAnim, true)
-    console.log('Set talk animation on track 1:', talkEntry)
-    
-    if (talkEntry) {
-      talkEntry.mixDuration = 0
-      talkEntry.mixTime = 0
-    }
-    
-    // Apply animations and update skeleton
-    state.apply(skeleton)
-    skeleton.updateWorldTransform()
-    
-    // Ensure player is playing
-    console.log('Starting render loop and play')
-    startPlayerRenderLoop(player)
-    store.playing = true
-    player.play()
-  } else {
-    console.log('Disabling yapping mode')
-    // Disable yapping mode - go back to regular animation
-    const currentAnim = store.selectedAnimation
-    if (currentAnim) {
-      console.log('Going back to animation:', currentAnim)
-      setSpineAnimation(player, currentAnim, { loop: true, forceNoMix: true })
-      startPlayerRenderLoop(player)
-      store.playing = true
-      player.play()
-    }
-  }
-}
-
 function saveScreenshot(transparent: boolean) {
   if (!player || !manualCamera) return
 
@@ -2708,7 +2762,7 @@ function saveScreenshot(transparent: boolean) {
   const gl = (player as unknown as SpinePlayerInternal).context.gl
   const maxTexSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
   const mapping = getCompositeForAnimation(animationName)
-  const hasOverlap = !!mapping && mapping.some(segment => Array.isArray(segment))
+  const hasOverlap = !!mapping && compositeHasParallel(mapping)
 
   let targetWidth: number
   let targetHeight: number
@@ -2787,25 +2841,30 @@ function saveScreenshot(transparent: boolean) {
   })
 }
 
-function exportAnimation(transparent: boolean): Promise<void> {
+async function exportAnimation(transparent: boolean): Promise<void> {
   const p = player
   const cam = manualCamera
-  if (!p || !cam) return Promise.resolve()
+  if (!p || !cam) return
 
+  stopCharacterAudio()
   cancelExport = false
   exportingAnimation = true
 
   const canvas = p.canvas!
   const animationName = store.selectedAnimation
   const fps = 60
+  const prevPos = new Vector2(cam.position.x, cam.position.y)
+  const prevZoom = cam.zoom
+  const wasPlaying = store.playing
+  const state = p.animationState
+  const skeleton = p.skeleton
+  const animName = store.selectedAnimation
+  let mapping: CompiledComposite | null = null
+  let stream: MediaStream | null = null
+  let activeRecorder: MediaRecorder | null = null
 
-  return new Promise(async resolve => {
+  try {
     applyPlayerBackgroundTransparency(p)
-
-    const prevPos = new Vector2(cam.position.x, cam.position.y)
-    const prevZoom = cam.zoom
-    const state = p.animationState
-    const skeleton = p.skeleton
 
     if (!store.useCurrentCamera) {
       cam.position.x = defaultCameraPos.x
@@ -2819,9 +2878,9 @@ function exportAnimation(transparent: boolean): Promise<void> {
       cam.update()
     }
     const mimeType =
-      ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(type =>
+      ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(type =>
         MediaRecorder.isTypeSupported(type),
-      ) || 'video/webm'
+      )
     const compositeCanvas = document.createElement('canvas')
     compositeCanvas.width = canvas.width
     compositeCanvas.height = canvas.height
@@ -2830,66 +2889,23 @@ function exportAnimation(transparent: boolean): Promise<void> {
       cancelAnimationFrame(compositeFrameHandle)
       compositeFrameHandle = null
     }
-    const stream = compositeCtx ? compositeCanvas.captureStream(fps) : canvas.captureStream(fps)
-    recorder = new MediaRecorder(stream, {
-      mimeType,
+    stream = compositeCtx ? compositeCanvas.captureStream(fps) : canvas.captureStream(fps)
+    const recorderOptions: MediaRecorderOptions = {
       videoBitsPerSecond: 10_000_000,
-    })
+    }
+    if (mimeType) recorderOptions.mimeType = mimeType
+    activeRecorder = new MediaRecorder(stream, recorderOptions)
+    recorder = activeRecorder
 
     const chunks: BlobPart[] = []
-    recorder.ondataavailable = e => {
-      if (e.data.size > 0) chunks.push(e.data)
-    }
-
-    const wasPlaying = store.playing
-
-    recorder.onstop = () => {
-      if (!cancelExport) {
-        const blob = new Blob(chunks, { type: mimeType })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `animation_${store.selectedCharacterId}_${animationName}.webm`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
-      applyPlayerBackgroundTransparency(p)
-      if (compositeFrameHandle) {
-        cancelAnimationFrame(compositeFrameHandle)
-        compositeFrameHandle = null
-      }
-      if (!store.useCurrentCamera) {
-        cam.position.x = prevPos.x
-        cam.position.y = prevPos.y
-        cam.zoom = prevZoom
-        cam.update()
-      }
-      if (mapping) {
-        void startComposite(p, mapping, 0)
-      } else if (animName) {
-        setSpineAnimation(p, animName, { loop: true })
-      }
-      if (wasPlaying) {
-        p.play()
-      } else {
-        p.pause()
-      }
-      store.playing = wasPlaying
-      exportingAnimation = false
-      recorder = null
-      cancelExport = false
-      resolve()
-    }
-
-    const animName = store.selectedAnimation
     let duration = 3
     let timelineEnd = duration
-    const mapping = getCompositeForAnimation(animName)
+    mapping = getCompositeForAnimation(animName)
     if (animName && state) {
       if (mapping) {
         const info = await scheduleCompositeTimeline(p, mapping, 0)
         duration = info.duration
-        timelineEnd = info.schedule.reduce((max, seg) => Math.max(max, seg.start + seg.duration), 0) || duration || 3
+        timelineEnd = info.duration || duration || 3
         store.playing = true
         await startComposite(p, mapping, 0)
       } else {
@@ -2914,9 +2930,40 @@ function exportAnimation(transparent: boolean): Promise<void> {
     p.play()
     if (compositeCtx) {
       drawCompositeFrame(compositeCtx, compositeCanvas.width, compositeCanvas.height, canvas, transparent)
-      recorder.onstart = () => {
+    }
+
+    const recordingComplete = new Promise<void>((resolve, reject) => {
+      let stopTimer: number | null = null
+      let stopWatchdog: number | null = null
+      const clearStopTimers = () => {
+        if (stopTimer !== null) window.clearTimeout(stopTimer)
+        if (stopWatchdog !== null) window.clearTimeout(stopWatchdog)
+      }
+      const stopRecording = () => {
+        if (activeRecorder?.state === 'recording') activeRecorder.stop()
+        stopWatchdog = window.setTimeout(() => {
+          reject(new Error('The browser did not finish the WebM recording.'))
+        }, 5_000)
+      }
+
+      activeRecorder!.ondataavailable = e => {
+        if (e.data.size > 0) chunks.push(e.data)
+      }
+      activeRecorder!.onerror = event => {
+        clearStopTimers()
+        const error = (event as Event & { error?: DOMException }).error
+        reject(error || new Error('The browser failed to record the WebM video.'))
+      }
+      activeRecorder!.onstop = () => {
+        clearStopTimers()
+        resolve()
+      }
+
+      activeRecorder!.start()
+
+      if (compositeCtx) {
         const renderComposite = () => {
-          if (!recorder || recorder.state !== 'recording') return
+          if (activeRecorder?.state !== 'recording') return
           if (compositeCanvas.width !== canvas.width || compositeCanvas.height !== canvas.height) {
             compositeCanvas.width = canvas.width
             compositeCanvas.height = canvas.height
@@ -2926,15 +2973,55 @@ function exportAnimation(transparent: boolean): Promise<void> {
         }
         compositeFrameHandle = requestAnimationFrame(renderComposite)
       }
-    }
-    recorder.start()
 
-    setTimeout(() => {
-      if (recorder && recorder.state === 'recording') {
-        recorder.stop()
-      }
-    }, recordDuration * 1000)
-  })
+      stopTimer = window.setTimeout(stopRecording, Math.max(0, recordDuration * 1000))
+    })
+
+    await recordingComplete
+
+    if (!cancelExport) {
+      const recordedMimeType = activeRecorder.mimeType || mimeType || 'video/webm'
+      const blob = new Blob(chunks, { type: recordedMimeType })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `animation_${store.selectedCharacterId}_${animationName}.webm`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1_000)
+    }
+  } finally {
+    if (activeRecorder?.state !== 'inactive') {
+      activeRecorder?.stop()
+    }
+    stream?.getTracks().forEach(track => track.stop())
+    applyPlayerBackgroundTransparency(p)
+    if (compositeFrameHandle) {
+      cancelAnimationFrame(compositeFrameHandle)
+      compositeFrameHandle = null
+    }
+    if (!store.useCurrentCamera) {
+      cam.position.x = prevPos.x
+      cam.position.y = prevPos.y
+      cam.zoom = prevZoom
+      cam.update()
+    }
+    if (mapping) {
+      void startComposite(p, mapping, 0)
+    } else if (animName) {
+      setSpineAnimation(p, animName, { loop: true })
+    }
+    if (wasPlaying) {
+      p.play()
+    } else {
+      p.pause()
+    }
+    store.playing = wasPlaying
+    exportingAnimation = false
+    if (recorder === activeRecorder) recorder = null
+    cancelExport = false
+  }
 }
 
 function exportAnimationFrames(transparent: boolean): Promise<void> {
@@ -2942,6 +3029,7 @@ function exportAnimationFrames(transparent: boolean): Promise<void> {
   const cam = manualCamera
   if (!p || !cam) return Promise.resolve()
 
+  stopCharacterAudio()
   cancelExport = false
   exportingFrames = true
   exportingAnimation = true
@@ -2974,7 +3062,7 @@ function exportAnimationFrames(transparent: boolean): Promise<void> {
     const state = p.animationState
     const skeleton = p.skeleton
     let timelineEnd = duration
-    let mapping: CutsceneComposite | null = null
+    let mapping: CompiledComposite | null = null
     if (animName && state) {
       mapping = getCompositeForAnimation(animName)
       if (mapping) {
@@ -3157,261 +3245,10 @@ function exportAnimationFrames(transparent: boolean): Promise<void> {
   })
 }
 
-function getHitAreasForCurrentState(): CharacterHitAreas | null {
-  const charId = store.selectedCharacterId
-  const config = hitAreaConfig[charId]
-  
-  if (!config) {
-    console.warn(`No config for character ${charId}`)
-    return null
-  }
-
-  // Get the currently playing animation (from player if available, otherwise from store)
-  let currentAnim = store.selectedAnimation
-  
-  // Default to idle1 if in Fated Guests and no animation selected
-  if (!currentAnim && store.animationCategory === 'dating') {
-    currentAnim = 'idle1'
-  }
-  
-  // If no animation selected in store, try to get from player
-  if (!currentAnim && player?.animationState) {
-    const track = player.animationState.getCurrent(0)
-    if (track?.animation?.name) {
-      currentAnim = track.animation.name
-    }
-  }
-
-  // Check if this animation has specific hit areas
-  if (currentAnim && config[currentAnim]) {
-    return config[currentAnim] as CharacterHitAreas
-  }
-  
-  // Otherwise return the default/base hit areas
-  return config as CharacterHitAreas
-}
-
-function setHitAreaVisible(visible: boolean) {
-  if (!overlayCanvas.value) {
-    console.error('Overlay canvas not ready for hit areas')
-    return
-  }
-
-  const areas = getHitAreasForCurrentState()
-
-  if (!areas) {
-    console.warn(`No hit areas configured for character ${store.selectedCharacterId}`)
-    return
-  }
-
-  try {
-    if (!hitAreaManager) {
-      const ctx = overlayCanvas.value.getContext('2d')
-      if (!ctx) {
-        console.error('Could not get 2D context for hit area canvas')
-        return
-      }
-      hitAreaManager = new HitAreaManager({
-        canvas: overlayCanvas.value,
-        offsetX: 0,
-        offsetY: 0,
-        scale: 1
-      })
-      
-      // Add click listener once (keep it active always)
-      if (container.value && !container.value.dataset.hitAreaListenerAdded) {
-        container.value.addEventListener('click', onHitAreaClick as EventListener)
-        container.value.dataset.hitAreaListenerAdded = 'true'
-      }
-    }
-    
-    hitAreaManager.loadAreas(areas)
-    hitAreaManager.setVisible(visible)
-
-    if (visible) {
-      // Start continuous rendering of hit areas
-      startHitAreaRender()
-    } else {
-      // Stop continuous rendering (but keep click listener active)
-      stopHitAreaRender()
-    }
-  } catch (error) {
-    console.error('Error setting hit area visibility:', error)
-  }
-}
-
-function reloadHitAreas() {
-  // Initialize hit area manager if not already done
-  if (!hitAreaManager) {
-    initHitAreaManager()
-  }
-  
-  // Load the hit areas for the current idle state
-  if (hitAreaManager) {
-    const areas = getHitAreasForCurrentState()
-    if (areas) {
-      hitAreaManager.loadAreas(areas)
-      // Only render if already visible
-      if (hitAreaManager.isVisible()) {
-        startHitAreaRender()
-      }
-      console.log('Hit areas reloaded for:', store.selectedAnimation)
-    }
-  }
-}
-
-let hitAreaRenderHandle: number | null = null
-
-let boneFoundLogged = false
-
-function updateHitAreaPosition() {
-  if (!hitAreaManager || !player) return
-  
-  const canvas = player.canvas
-  if (!canvas) return
-  
-  const skeleton = player.skeleton
-  const renderer = player.sceneRenderer
-  
-  if (!skeleton || !renderer || !renderer.camera) return
-  
-  const camera = renderer.camera
-  const screenCenterX = canvas.width / 2
-  const screenCenterY = canvas.height / 2
-  
-  const areas = hitAreaManager.getAreas()
-  if (areas.length === 0) return
-  
-  // Process EACH area with its own bone
-  areas.forEach((area: any, index: number) => {
-    if (!area.boneName) return
-    
-    const bone = skeleton.findBone(area.boneName)
-    if (!bone) return
-    
-    // Convert bone world position to screen position
-    // accounting for camera position and zoom
-    const boneScreenX = screenCenterX + ((bone.worldX - camera.position.x) * camera.zoom)
-    const boneScreenY = screenCenterY - ((bone.worldY - camera.position.y) * camera.zoom)
-    
-    if (index === 0 && !boneFoundLogged) {
-      console.log('✓ Bone:', area.boneName, 'Screen:', { boneScreenX, boneScreenY })
-      boneFoundLogged = true
-    }
-  })
-  
-  // Get first area's bone for offset calculation
-  const firstArea = areas[0]
-  let offsetX = screenCenterX
-  let offsetY = screenCenterY
-  
-  if (firstArea && firstArea.boneName) {
-    const bone = skeleton.findBone(firstArea.boneName)
-    if (bone) {
-      offsetX = screenCenterX + ((bone.worldX - camera.position.x) * camera.zoom)
-      offsetY = screenCenterY - ((bone.worldY - camera.position.y) * camera.zoom)
-    }
-  }
-  
-  hitAreaManager.updateCanvas(offsetX, offsetY, camera.zoom)
-}
-
-function startHitAreaRender() {
-  if (hitAreaRenderHandle !== null) return
-  
-  const render = () => {
-    if (hitAreaManager?.isVisible()) {
-      updateHitAreaPosition()
-      hitAreaManager.draw()
-      hitAreaRenderHandle = requestAnimationFrame(render)
-    }
-  }
-  
-  hitAreaRenderHandle = requestAnimationFrame(render)
-}
-
-function stopHitAreaRender() {
-  if (hitAreaRenderHandle !== null) {
-    cancelAnimationFrame(hitAreaRenderHandle)
-    hitAreaRenderHandle = null
-  }
-  
-  // Clear canvas
-  if (overlayCanvas.value) {
-    const ctx = overlayCanvas.value.getContext('2d')
-    if (ctx) {
-      ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
-    }
-  }
-}
-
-function onHitAreaClick(event: Event) {
-  if (!hitAreaManager || !player) return
-  if (!(event instanceof MouseEvent)) return
-
-  const rect = overlayCanvas.value?.getBoundingClientRect()
-  if (!rect) return
-
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
-
-  const hitArea = hitAreaManager.getHitAreaAtPoint(x, y)
-  
-  // Get the current offset to convert screen coords back to config coords
-  const areas = hitAreaManager.getAreas()
-  const renderer = player.sceneRenderer
-  const canvas = player.canvas
-  const skeleton = player.skeleton
-  
-  let offsetX = canvas?.width ? canvas.width / 2 : 0
-  let offsetY = canvas?.height ? canvas.height / 2 : 0
-  
-  if (areas.length > 0 && areas[0]?.boneName && skeleton && renderer?.camera) {
-    const bone = skeleton.findBone(areas[0].boneName)
-    if (bone && canvas) {
-      const screenCenterX = canvas.width / 2
-      const screenCenterY = canvas.height / 2
-      const camera = renderer.camera
-      offsetX = screenCenterX + ((bone.worldX - camera.position.x) * camera.zoom)
-      offsetY = screenCenterY - ((bone.worldY - camera.position.y) * camera.zoom)
-    }
-  }
-  
-  // Convert screen coords to config-style coords (relative to bone center)
-  const clickX = x - offsetX
-  const clickY = y - offsetY
-  
-  // For hit areas, the config uses upper-left corner, so subtract half width/height from click point
-  const cornerX = Math.round(clickX - (hitArea?.width ?? 50) / 2)
-  const cornerY = Math.round(clickY - (hitArea?.height ?? 50) / 2)
-  const displayY = cornerY
-  
-  console.log(`📍 x: ${cornerX}, y: ${displayY}`)
-  
-  if (hitArea) {
-    try {
-      setSpineAnimation(player, hitArea.animation, { loop: false })
-      startPlayerRenderLoop(player)
-      store.playing = true
-      player.play()
-    } catch (error) {
-      console.error('Error playing animation on hit area click:', error)
-    }
-  }
-}
-
-function playAnimation(animationName: string) {
-  if (!player) return
-  setSpineAnimation(player, animationName, { loop: true })
-  startPlayerRenderLoop(player)
-  store.playing = true
-}
-
 function playAnimationSequence(animationNames: string[]) {
   if (!player || !player.animationState || animationNames.length === 0) return
   
   const state = player.animationState
-  const tracks = state.tracks as Array<any>
   
   // Play first animation (non-looping)
   setSpineAnimation(player, animationNames[0], { loop: false })
@@ -3429,38 +3266,205 @@ function playAnimationSequence(animationNames: string[]) {
   store.playing = true
 }
 
-function initHitAreaManager() {
-  if (hitAreaManager) return
-  if (!overlayCanvas.value) return
-  
+function setHitAreaVisible(visible: boolean) {
+  if (!overlayCanvas.value) {
+    console.warn('Overlay canvas not ready for hit areas')
+    return
+  }
+
   try {
-    const ctx = overlayCanvas.value.getContext('2d')
-    if (!ctx) return
-    
-    hitAreaManager = new HitAreaManager({
-      canvas: overlayCanvas.value,
-      offsetX: 0,
-      offsetY: 0,
-      scale: 1
-    })
-    
-    // Load hit areas immediately
+    if (!hitAreaManager) {
+      const ctx = overlayCanvas.value.getContext('2d')
+      if (!ctx) {
+        console.error('Could not get 2D context for hit area canvas')
+        return
+      }
+      hitAreaManager = new HitAreaManager({
+        canvas: overlayCanvas.value,
+        offsetX: 0,
+        offsetY: 0,
+        scale: 1
+      })
+    }
+
+    // Load hit areas for current animation state (idle1 or idle2)
     const areas = getHitAreasForCurrentState()
     if (areas) {
       hitAreaManager.loadAreas(areas)
     }
+
+    hitAreaManager.setVisible(visible)
     
-    // Add click listener immediately (not just when visible)
+    // Add click listener for hit areas
     if (container.value && !container.value.dataset.hitAreaListenerAdded) {
       container.value.addEventListener('click', onHitAreaClick as EventListener)
       container.value.dataset.hitAreaListenerAdded = 'true'
     }
+    
+    // Start drawing loop if showing, stop if hiding
+    if (visible) {
+      drawHitAreas()
+    } else {
+      if (hitAreaRenderHandle !== null) {
+        cancelAnimationFrame(hitAreaRenderHandle)
+        hitAreaRenderHandle = null
+      }
+      const ctx = overlayCanvas.value.getContext('2d')
+      if (ctx) {
+        ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
+      }
+    }
   } catch (error) {
-    console.error('Error initializing hit area manager:', error)
+    console.error('Error setting hit area visibility:', error)
   }
 }
 
-defineExpose({ resetCamera, zoomIn, zoomOut, saveScreenshot, exportAnimation, exportAnimationFrames, setYappingMode, setHitAreaVisible, reloadHitAreas, playAnimation, playAnimationSequence, initHitAreaManager })
+function reloadHitAreas() {
+  if (!hitAreaManager) return
+
+  try {
+    const charId = store.selectedCharacterId
+    const currentAnim = store.selectedAnimation
+    const charAreas = hitAreaConfig[charId]
+    
+    if (charAreas) {
+      // Try to get animation-specific areas first, then fall back to general areas
+      const areas = (charAreas as any)[currentAnim] || charAreas
+      if (areas) {
+        hitAreaManager.loadAreas(areas as CharacterHitAreas)
+      }
+    }
+  } catch (error) {
+    console.warn('Error reloading hit areas:', error)
+  }
+}
+
+function getHitAreasForCurrentState(): CharacterHitAreas | null {
+  const charId = store.selectedCharacterId
+  const config = hitAreaConfig[charId]
+  
+  if (!config) {
+    console.warn(`No config for character ${charId}`)
+    return null
+  }
+
+  // Get the currently selected animation (which should be idle1 or idle2 when in dating mode)
+  const currentAnim = store.selectedAnimation
+  
+  // If the current animation is idle1 or idle2, use that directly
+  if (currentAnim && (currentAnim === 'idle1' || currentAnim === 'idle2')) {
+    if (config[currentAnim]) {
+      return config[currentAnim] as CharacterHitAreas
+    }
+  }
+  
+  // Try to get from player's current animation if no animation selected
+  let detectedIdleState: 'idle1' | 'idle2' | null = null
+  if (player?.animationState) {
+    const track = player.animationState.getCurrent(0)
+    if (track?.animation?.name) {
+      const animName = track.animation.name
+      if (animName.includes('idle2')) {
+        detectedIdleState = 'idle2'
+      } else if (animName.includes('idle')) {
+        detectedIdleState = 'idle1'
+      }
+    }
+  }
+  
+  // Return the detected idle state
+  if (detectedIdleState && config[detectedIdleState]) {
+    return config[detectedIdleState] as CharacterHitAreas
+  }
+  
+  // Default to idle1 if nothing else matched
+  if (config['idle1']) {
+    return config['idle1'] as CharacterHitAreas
+  }
+  
+  return null
+}
+
+function drawHitAreas() {
+  if (!hitAreaManager?.isVisible() || !overlayCanvas.value) {
+    if (hitAreaRenderHandle !== null) {
+      cancelAnimationFrame(hitAreaRenderHandle)
+      hitAreaRenderHandle = null
+    }
+    // Clear canvas when not showing hit areas
+    const ctx = overlayCanvas.value?.getContext('2d')
+    if (ctx && overlayCanvas.value) {
+      ctx.clearRect(0, 0, overlayCanvas.value.width, overlayCanvas.value.height)
+    }
+    return
+  }
+
+  try {
+    // Update hit area position based on camera
+    updateHitAreaPosition()
+    hitAreaManager.draw()
+  } catch (error) {
+    console.warn('Error drawing hit areas:', error)
+  }
+
+  hitAreaRenderHandle = requestAnimationFrame(drawHitAreas)
+}
+
+function updateHitAreaPosition() {
+  if (!hitAreaManager || !player || !overlayCanvas.value) return
+  
+  const canvas = player.canvas
+  if (!canvas) return
+  
+  // Simple offset: just use screen center (no camera adjustment)
+  const offsetX = canvas.width / 2
+  const offsetY = canvas.height / 2
+  
+  hitAreaManager.updateCanvas(offsetX, offsetY, 1)
+}
+
+function onHitAreaClick(event: Event) {
+  if (!hitAreaManager || !player) return
+  if (!(event instanceof MouseEvent)) return
+
+  const rect = overlayCanvas.value?.getBoundingClientRect()
+  if (!rect) return
+
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+
+  const hitArea = hitAreaManager.getHitAreaAtPoint(x, y)
+  
+  // Get the current offset to convert screen coords back to config coords
+  const canvas = player.canvas
+  
+  // Default offset is just screen center
+  let offsetX = canvas?.width ? canvas.width / 2 : 0
+  let offsetY = canvas?.height ? canvas.height / 2 : 0
+  
+  // Convert screen coords to config-style coords
+  const clickX = x - offsetX
+  const clickY = y - offsetY
+  
+  // For hit areas, subtract half width/height from click point
+  const displayX = Math.round(clickX - (hitArea?.width ?? 50) / 2)
+  const displayY = Math.round(clickY - (hitArea?.height ?? 50) / 2)
+  
+  console.log(`📍 x: ${displayX}, y: ${displayY}`)
+  
+  if (hitArea) {
+    try {
+      setSpineAnimation(player, hitArea.animation, { loop: false })
+      startPlayerRenderLoop(player)
+      store.playing = true
+      player.play()
+    } catch (error) {
+      console.error('Error playing animation on hit area click:', error)
+    }
+  }
+}
+
+defineExpose({ resetCamera, zoomIn, zoomOut, saveScreenshot, exportAnimation, exportAnimationFrames, playAnimationSequence, setHitAreaVisible, reloadHitAreas })
 </script>
 <style scoped>
 .seek-range {

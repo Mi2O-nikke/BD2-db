@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "run-s build-main copy-spines",
+    "build": "run-s build-main copy-assets",
     "build-main": "run-p type-check \"build-only {@}\" --",
-    "build-with-spine": "run-s build-only \"copy-spines\"",
-    "copy-spines": "node scripts/copy-spines.js",
+    "copy-assets": "node scripts/copy-assets.js",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
@@ -33,7 +32,7 @@
     "jiti": "^2.4.2",
     "npm-run-all2": "^7.0.2",
     "typescript": "~5.8.0",
-    "vite": "^6.2.4",
+    "vite": "^8.1.2",
     "vue-tsc": "^2.2.8"
   }
 }

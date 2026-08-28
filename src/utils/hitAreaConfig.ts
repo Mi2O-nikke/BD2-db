@@ -1,4 +1,3 @@
-
 export interface CharacterCameraConfig {
   zoom?: number
   x?: number
@@ -11,10 +10,11 @@ export const characterCameraConfig: Record<string, CharacterCameraConfig> = {
   '067104': { zoom: 3.0, x: -100, y: -100 },
 }
 
-//motion before idle2
+//motion before idle2 (transition when switching mood)
+// Format: 'animationName:duration' where duration is in milliseconds
 export const moodMotionConfig: Record<string, string> = {
-  '003892': 'motion1_23',
-  '067104': 'motion1_18',
+  '003892': 'motion1_23',  // Update duration manually: e.g., 'motion1_23:2000' for 2 seconds
+  '067104': 'motion1_18',  // Update duration manually: e.g., 'motion1_18:2000' for 2 seconds
 }
 
 // Helper to create uniform camera config for multiple animations
@@ -26,7 +26,7 @@ const createUniformCameraConfig = (animations: string[], camera: CharacterCamera
   return config
 }
 
-//ultimate motion+zoom
+//ultimate motion+zoom (optional - for future Ultimate mode features)
 export const ultimateClickMotionConfig: Record<string, { default: string; camera?: CharacterCameraConfig; cameraByAnimation?: Record<string, CharacterCameraConfig> }> = {
   '003892': { default: 'cut_A_all', cameraByAnimation: { 'cut_A': { zoom: 2.5, y: 0 } } },
   '067103': { default: 'cut_A_all', cameraByAnimation: { 'cut_A': { zoom: 1.8, y: -250 } } },  

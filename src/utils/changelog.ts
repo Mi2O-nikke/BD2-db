@@ -1,5 +1,63 @@
 export default [
   {
+    "date": "27/08/2026",
+    "changes": [
+      "Updated Yuri: Forever Mascot fated guest animations (forgot to do that in the last update).",
+      "Added Blade: Tender Dream and Aquila: Savage Warrior character icons and voices.",
+      "Added Blade: Tender Dream and Aquila: Savage Warrior standing animations.",
+      "Added Blade: Tender Dream and Aquila: Savage Warrior ultimate animations.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
+    "date": "13/08/2026",
+    "changes": [
+      "Updated Glacia: Heavenly Guardian Successor ultimate animation.",
+      "Added Helena: Sunny Inn Hand and Dalvi: Butterfly Dream ultimate animations.",
+      "Added Dalvi: Bright Moon fated guest animations.",
+      "Display new or updated animations in the top of the character list with a ribbon",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
+    "date": "30/07/2026",
+    "changes": [
+      "Added Sylvia: Crimson Lotus, Helena: Sunny Inn Hand, Dalvi: Butterfly Dream, Yuri: Forever Mascot and Glacia: Heavenly Guardian Successor character icons.",
+      "Added Sylvia: Crimson Lotus, Helena: Sunny Inn Hand, Dalvi: Butterfly Dream, Yuri: Forever Mascot and Glacia: Heavenly Guardian Successor standing animations.",
+      "Added Sylvia: Crimson Lotus, Helena: Sunny Inn Hand, Dalvi: Butterfly Dream, Yuri: Forever Mascot and Glacia: Heavenly Guardian Successor voice lines.",
+      "Added Sylvia: Crimson Lotus, Yuri: Forever Mascot and Glacia: Heavenly Guardian Successor ultimate animations.",
+      "Added Yuri: Forever Mascot fated guest animations.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
+    "date": "16/07/2026",
+    "changes": [
+      "Added voices for the characters in JP and KR and a setting to change the language.",
+      "Fix exporting animations as webm in browsers like Firefox and others.",
+      "Added a tutorial for the new feature.",
+      "Added complete ultimate animations (cut_all animations).",
+      "Added Dalvi: Tricky Lover ultimate animations.",
+      "Added Dalvi: Tricky Lover character icon."
+    ]
+  },
+  {
+    "date": "09/07/2026",
+    "changes": [
+      "Added all the NPC character standing animations (finally).",
+      "Added new filters: Playable Characters and NPCs.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
+    "date": "02/07/2026",
+    "changes": [
+      "Added Elise: Naive Lady and Nebris: Lucky Bikini ultimate animations.",
+      "Added Elise: Naive Lady character icon.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
     "date": "18/06/2026",
     "changes": [
       "Added Granhildr: Combat Medic ultimate and fated guest animations.",

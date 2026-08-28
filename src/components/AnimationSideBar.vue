@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full lg:w-64 lg:h-full max-h-dvh lg:max-h-none overflow-hidden lg:overflow-visible bg-gray-800 text-white flex flex-col">
+  <div class="w-full lg:w-64 lg:h-full max-h-dvh lg:max-h-none overflow-hidden lg:overflow-visible bg-gray-800 text-white flex flex-col min-h-0">
     <div class="px-2 flex flex-col gap-2">
       <div class="pt-2">
         <div class="inline-flex bg-gray-700/70 rounded-md p-1 gap-1">
@@ -19,9 +19,11 @@
           </button>
         </div>
       </div>
-      <template v-if="sidebarTab === 'controls'">
-      </template>
-      <template v-else>
+    </div>
+    
+    <!-- Layers Tab Content -->
+    <template v-if="sidebarTab === 'layers'">
+      <div class="px-2 flex flex-col gap-2 flex-1 min-h-0">
         <span>Layers</span>
         <input
           v-model="layerFilter"
@@ -29,6 +31,20 @@
           placeholder="Filter layers..."
           class="bg-gray-700 text-white rounded px-2 py-1 text-sm"
         />
+        <div class="flex gap-2">
+          <button
+            @click="selectAllLayers"
+            class="flex-1 bg-gray-600 hover:bg-gray-500 text-white rounded px-2 py-1 text-sm transition-colors"
+          >
+            Select All
+          </button>
+          <button
+            @click="deselectAllLayers"
+            class="flex-1 bg-gray-600 hover:bg-gray-500 text-white rounded px-2 py-1 text-sm transition-colors"
+          >
+            Deselect All
+          </button>
+        </div>
         <div class="overflow-y-auto sidebar-scroll flex-1 min-h-0">
           <div v-if="!filteredLayers.length" class="text-sm text-gray-400 px-2 py-2">
             No layers found.
@@ -46,9 +62,12 @@
             <span class="truncate" :title="layer.label">{{ layer.label }}</span>
           </label>
         </div>
-      </template>
-    </div>
-    <div class="flex flex-col">
+      </div>
+    </template>
+    
+    <!-- Controls Tab Content -->
+    <template v-else>
+      <div class="flex flex-col overflow-y-auto flex-1">
       <div v-if="!currentChar?.customFiles" class="p-2">
         <div class="flex flex-col gap-2">
           <button
@@ -81,61 +100,49 @@
             Fated Guest
           </button>
         </div>
-        <div class="border-t border-gray-600 my-2"></div>
+      </div>
+      <div class="p-2">
         <button
-          @click="yappingMode = !yappingMode"
-          :disabled="!hasYappingAnimation"
+          @click="hitAreaVisible = !hitAreaVisible"
+          :disabled="store.animationCategory !== 'dating'"
           class="w-full py-2 rounded-full flex items-center justify-center font-semibold text-sm transition-all"
           :class="{
-            'disabled:opacity-50 disabled:cursor-not-allowed': !hasYappingAnimation,
-            'bg-pink-600 text-white shadow-lg': yappingMode && hasYappingAnimation,
-            'bg-gray-700 text-gray-300 hover:bg-gray-600': !yappingMode && hasYappingAnimation,
-            'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed': !hasYappingAnimation
+            'disabled:opacity-50 disabled:cursor-not-allowed': store.animationCategory !== 'dating',
+            'bg-orange-600 text-white shadow-lg': hitAreaVisible && store.animationCategory === 'dating',
+            'bg-gray-700 text-gray-300 hover:bg-gray-600': !hitAreaVisible && store.animationCategory === 'dating',
+            'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed': store.animationCategory !== 'dating'
           }"
         >
-          Yapping Mode
+          Hit Area
         </button>
-        <div :style="{ marginTop: yappingToHitAreaGap + 'px' }" class="flex flex-col gap-0">
-          <button
-            @click="hitAreaVisible = !hitAreaVisible"
-            :disabled="!canTriggerHitAreas"
-            class="w-full py-2 rounded-full flex items-center justify-center font-semibold text-sm transition-all"
-            :class="{
-              'disabled:opacity-50 disabled:cursor-not-allowed': !canTriggerHitAreas,
-              'bg-orange-600 text-white shadow-lg': hitAreaVisible && canTriggerHitAreas,
-              'bg-gray-700 text-gray-300 hover:bg-gray-600': !hitAreaVisible && canTriggerHitAreas,
-              'bg-gray-700 text-gray-400 opacity-50 cursor-not-allowed': !canTriggerHitAreas
-            }"
-          >
-            Hit Area
-          </button>
-        <div v-if="showSlider" :style="{ marginTop: hitAreaToSliderGap + 'px' }" class="rounded-full relative border-none shadow-none overflow-hidden" :class="{ 'opacity-50 pointer-events-none': !canTriggerHitAreas }">
-            <div class="relative h-10 flex items-center shadow-none overflow-hidden">
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white transition-opacity duration-200 pointer-events-none z-30"
-                :style="{
-                  opacity: Math.max(0, (hitAreaScale - 0) * 2)
-                }">
-                Night Mood
-              </span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                v-model.number="hitAreaScale"
-                @change="onSliderChange"
-                @pointerup="onSliderChange"
-                :disabled="!canTriggerHitAreas"
-                class="w-full h-10 appearance-none bg-gray-600 rounded-full cursor-pointer slider-thick outline-none border-none relative z-20 disabled:opacity-50 disabled:cursor-not-allowed"
-                :style="{ '--slider-color': hitAreaScale < 0.5 ? '#fbbf24' : '#a78bfa' }"
-              />
-              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white transition-opacity duration-200 pointer-events-none z-30"
-                :style="{
-                  opacity: Math.max(0, 1 - hitAreaScale * 2)
-                }">
-                Morning Mood
-              </span>
-            </div>
+      </div>
+      <div class="p-2" :class="{ 'opacity-50 pointer-events-none': store.animationCategory !== 'dating' }">
+        <div class="rounded-full relative border-none shadow-none overflow-hidden">
+          <div class="relative h-10 flex items-center shadow-none overflow-hidden">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white transition-opacity duration-200 pointer-events-none z-30"
+              :style="{
+                opacity: Math.max(0, (hitAreaScale - 0) * 2)
+              }">
+              Night Mood
+            </span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              v-model.number="hitAreaScale"
+              @change="onSliderChange"
+              @pointerup="onSliderChange"
+              :disabled="store.animationCategory !== 'dating'"
+              class="w-full h-10 appearance-none bg-gray-600 rounded-full cursor-pointer slider-thick outline-none border-none relative z-20 disabled:opacity-50 disabled:cursor-not-allowed"
+              :style="{ '--slider-color': hitAreaScale < 0.5 ? '#fbbf24' : '#a78bfa' }"
+            />
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white transition-opacity duration-200 pointer-events-none z-30"
+              :style="{
+                opacity: Math.max(0, 1 - hitAreaScale * 2)
+              }">
+              Morning Mood
+            </span>
           </div>
         </div>
       </div>
@@ -157,7 +164,7 @@
           <option v-for="name in animations" :key="name" :value="name">{{ name }}</option>
         </select>
       </div>
-      <div :style="{ marginTop: sliderToAnimSpeedGap + 'px' }" class="p-2">
+      <div class="p-2">
         <span>Animation Speed</span>
         <div class="flex items-center gap-2">
           <input
@@ -176,7 +183,7 @@
           class="bg-gray-600 hover:bg-gray-500 text-white rounded shadow transition px-4 py-2"
           @click="emit('reset-camera')"
         >
-          Reset (z)
+          Reset View
         </button>
         <button
           class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow transition px-4 py-2"
@@ -274,13 +281,13 @@
         </label>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, toRefs, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useCharacterStore } from '@/stores/characterStore'
-import hitAreaConfig from '@/utils/hitAreaConfig'
 
 import LoadingIcon from '@/components/icons/LoadingIcon.vue';
 
@@ -298,52 +305,6 @@ const layerFilter = ref('')
 const yappingMode = ref(false)
 const hitAreaVisible = ref(false)
 const hitAreaScale = ref(0)
-const yappingToHitAreaGap = ref(8)
-const hitAreaToSliderGap = ref(8)
-const sliderToAnimSpeedGap = ref(12)
-
-function onSliderChange() {
-  // Always emit mood-changed, then snap to nearest position
-  if (hitAreaScale.value >= 0.5) {
-    hitAreaScale.value = 1
-    // Emit event for Morning Mood (idle2)
-    emit('mood-changed', { mood: 'morning', animation: 'idle2' })
-  } else {
-    hitAreaScale.value = 0
-    // Emit event for Night Mood (idle1)
-    emit('mood-changed', { mood: 'night', animation: 'idle1' })
-  }
-}
-
-watch(yappingMode, (enabled) => {
-  if (enabled) {
-    // Find idle animation
-    const idleAnim = animations.value.find(anim => anim.toLowerCase().includes('idle'))
-    // Find the _face0_talk animation
-    const talkAnim = animations.value.find(anim => anim.includes('_face0_talk'))
-    
-    console.log('Yapping mode toggled ON', { idleAnim, talkAnim })
-    
-    if (idleAnim && talkAnim) {
-      // Emit event to play both animations
-      emit('yapping-mode', { enabled: true, idleAnim, talkAnim })
-    } else {
-      console.warn('Missing animations for yapping mode', { idleAnim, talkAnim, availableAnims: animations.value })
-    }
-  } else {
-    console.log('Yapping mode toggled OFF')
-    emit('yapping-mode', { enabled: false })
-  }
-})
-
-watch(hitAreaVisible, (visible) => {
-  try {
-    emit('hit-area-toggle', visible)
-  } catch (error) {
-    console.error('Error toggling hit area:', error)
-    hitAreaVisible.value = false
-  }
-})
 
 const emit = defineEmits(['select', 'reset-camera', 'screenshot', 'export-animation', 'category-change', 'yapping-mode', 'hit-area-toggle', 'mood-changed'])
 
@@ -380,21 +341,6 @@ const layerSourceSeparator = ' > '
 const hasYappingAnimation = computed(() => {
   const result = animations.value.some(anim => anim.includes('_face0_talk'))
   return result
-})
-const hasHitAreas = computed(() => {
-  // Show hit area button in all categories, but only functional in dating
-  const charId = store.selectedCharacterId
-  return !!hitAreaConfig[charId]
-})
-
-const showSlider = computed(() => {
-  // Slider is always shown for all characters
-  return true
-})
-
-const canTriggerHitAreas = computed(() => {
-  // Hit areas can only be triggered in Fated Guests (dating) category
-  return store.animationCategory === 'dating' && hasHitAreas.value
 })
 const layerNames = computed(() => [...store.layerNames].sort((a, b) => a.localeCompare(b)))
 const layerItems = computed(() => {
@@ -434,6 +380,19 @@ function getLayerBaseName(name: string) {
   return name.slice(separatorIndex + layerSourceSeparator.length)
 }
 
+function onSliderChange() {
+  // Always emit mood-changed, then snap to nearest position
+  if (hitAreaScale.value >= 0.5) {
+    hitAreaScale.value = 1
+    // Emit event for Morning Mood (idle2)
+    emit('mood-changed', { mood: 'morning', animation: 'idle2' })
+  } else {
+    hitAreaScale.value = 0
+    // Emit event for Night Mood (idle1)
+    emit('mood-changed', { mood: 'night', animation: 'idle1' })
+  }
+}
+
 function isLayerVisible(name: string) {
   const value = store.layerVisibility[name]
   return value !== false
@@ -443,11 +402,23 @@ function toggleLayer(name: string) {
   store.layerVisibility[name] = !isLayerVisible(name)
 }
 
+function selectAllLayers() {
+  filteredLayers.value.forEach(layer => {
+    store.layerVisibility[layer.key] = true
+  })
+}
+
+function deselectAllLayers() {
+  filteredLayers.value.forEach(layer => {
+    store.layerVisibility[layer.key] = false
+  })
+}
+
 watch(() => store.animationCategory, () => {
   emit('category-change');
   
   // Auto-toggle hit area button twice when entering Fated Guests mode
-  if (store.animationCategory === 'dating' && hasHitAreas.value) {
+  if (store.animationCategory === 'dating' && currentChar.value?.dating) {
     // First click - open
     hitAreaVisible.value = true
     
@@ -458,18 +429,63 @@ watch(() => store.animationCategory, () => {
   }
 });
 
+watch(yappingMode, (enabled) => {
+  console.log('Yapping mode toggled:', enabled)
+  if (enabled) {
+    // Find idle animation
+    const idleAnim = animations.value.find(anim => anim.toLowerCase().includes('idle'))
+    // Find the _face0_talk animation
+    const talkAnim = animations.value.find(anim => anim.includes('_face0_talk'))
+    
+    console.log('Found animations:', { idleAnim, talkAnim, availableAnims: animations.value })
+    
+    if (idleAnim && talkAnim) {
+      // Emit event to play both animations
+      emit('yapping-mode', { enabled: true, idleAnim, talkAnim })
+    } else {
+      console.warn('Missing idle or talk animation')
+      yappingMode.value = false
+    }
+  } else {
+    emit('yapping-mode', { enabled: false })
+  }
+});
+
 watch(() => store.selectedCharacterId, () => {
-  // Reset slider to 0 (Night Mood) when character changes
+  // Reset slider to 0 (Morning Mood) when character changes
   hitAreaScale.value = 0
+  
   // Reset yapping mode when character changes
   yappingMode.value = false
+  
+  // Auto-activate Ultimate if character has cutscene
+  const charData = currentChar.value
+  if (charData?.cutscene) {
+    store.animationCategory = 'ultimate'
+  } 
+  // Auto-activate Fated Guest if character has dating
+  else if (charData?.dating) {
+    store.animationCategory = 'dating'
+  }
+  // Otherwise default to character
+  else {
+    store.animationCategory = 'character'
+  }
+});
+
+watch(hitAreaVisible, (visible) => {
+  try {
+    emit('hit-area-toggle', visible)
+  } catch (error) {
+    console.error('Error toggling hit area:', error)
+  }
 });
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   
   // Auto-toggle hit area button twice if already in Fated Guests mode on mount
-  if (store.animationCategory === 'dating' && hasHitAreas.value) {
+  if (store.animationCategory === 'dating' && currentChar.value?.dating) {
     // First click - open
     hitAreaVisible.value = true
     
