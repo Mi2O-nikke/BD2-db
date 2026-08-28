@@ -444,11 +444,11 @@ function onCategoryChange() {
 function onYappingMode(data: { enabled: boolean; idleAnim?: string; talkAnim?: string }) {
   if (data.enabled && data.idleAnim && data.talkAnim) {
     // Play idle first, then _face0_talk will play on top
-    store.selectedAnimation = data.idleAnim
+    store.selectedAnimation = data.idleAnim as string
     // After a brief moment, also ensure talk anim plays
     setTimeout(() => {
       if (store.selectedAnimation === data.idleAnim) {
-        store.selectedAnimation = data.talkAnim
+        store.selectedAnimation = data.talkAnim as string
         // Play both by cycling back to idle after
         store.playing = true
       }
