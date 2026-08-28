@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "run-s build-main copy-assets",
+    "build-with-spine": "run-s build-main copy-assets",
     "build-main": "run-p type-check \"build-only {@}\" --",
     "copy-assets": "node scripts/copy-assets.js",
     "preview": "vite preview",
