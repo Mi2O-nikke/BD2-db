@@ -2546,7 +2546,11 @@ function playCharacterMotion() {
     // Helper function to calculate duration of a single animation
     const getAnimationDuration = (animName: string): number => {
       const charMappings = cutsceneComposites[charId]
-      const compositeMapping = charMappings?.find((c: any) => c.name === animName)
+      // Ensure charMappings is an array of definitions before calling find
+      const mappingsArray = Array.isArray(charMappings) && charMappings.length > 0 && charMappings.every(isCompositeDefinition)
+        ? charMappings
+        : []
+      const compositeMapping = mappingsArray.find((c: CutsceneCompositeDefinition) => c.name === animName)
       
       if (compositeMapping?.composite) {
         const composite = compositeMapping.composite
