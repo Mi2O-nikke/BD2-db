@@ -136,7 +136,7 @@ import JSZip from 'jszip'
 import type { Animation, SceneRenderer, Slot } from '@esotericsoftware/spine-player'
 import type { SpinePlayerInternal } from '@/types/spine-player-internal'
 import { HitAreaManager } from '@/utils/hitAreaManager'
-import { datingSkinOverrideConfig, characterCameraConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
+import { datingSkinOverrideConfig, characterCameraConfig, ultimateCameraConfig, ultimateMoodMotionConfig, ultimateClickMotionConfig, DEBUG_HIT_AREAS, loveMotionConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
 import hitAreaConfig from '@/utils/hitAreaConfig'
 import cutsceneComposites, {
   type CutsceneAnim,
@@ -258,6 +258,8 @@ const CHARACTER_MOTION_ANIMATION = 'motion'
 let characterClickCandidate: CharacterClickCandidate | null = null
 let characterAudioPool: CharacterAudioPool | null = null
 let activeCharacterAudio: HTMLAudioElement | null = null
+let ultimateClickMotionIndex: number = 0 // Track which motion to play on next click
+let pendingUltimateTimers: number[] = [] // Track setTimeout IDs to clear them
 let nextCharacterAudioIndex = 0
 
 const backgroundReady = computed(() => backgroundImage.initialized && backgroundImage.width > 0 && backgroundImage.height > 0)
@@ -315,6 +317,7 @@ const editButtonClasses = computed(() => [
 let player: SpinePlayer | null = null
 let hitAreaManager: HitAreaManager | null = null
 let hitAreaRenderHandle: number | null = null
+let lastTrackedAnimation: string | null = null
 let recorder: MediaRecorder | null = null
 let cancelExport = false
 let exportingFrames = false
@@ -1943,6 +1946,25 @@ async function load() {
       slotNames.forEach(name => previousLayerVisibility.set(name, true))
 
       const selectAnimation = () => {
+        // For ultimate mode, play the motion animation automatically on load
+        if (store.animationCategory === 'ultimate') {
+          const charId = store.selectedCharacterId
+          const motionAnim = ultimateMoodMotionConfig[charId]
+          if (motionAnim && names.includes(motionAnim)) {
+            // Play motion first
+            store.selectedAnimation = motionAnim
+            resetComposite()
+            startPlayerRenderLoop(p)
+            setSpineAnimation(p, motionAnim, { loop: false })
+            if (store.playing) {
+              p.play()
+            } else {
+              p.pause()
+            }
+            return
+          }
+        }
+        
         if (!store.selectedAnimation || !names.includes(store.selectedAnimation)) {
           store.selectedAnimation = names[0]
         }
@@ -2064,13 +2086,16 @@ async function load() {
       defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
       defaultZoom = manualCamera.zoom
       
-      // Apply character-specific camera settings ONLY in dating mode
-      if (store.animationCategory === 'dating') {
-        const charCamera = characterCameraConfig[store.selectedCharacterId]
+      // Apply character-specific camera settings in dating or ultimate mode
+      if (store.animationCategory === 'dating' || store.animationCategory === 'ultimate') {
+        const cameraConfig = store.animationCategory === 'ultimate' ? ultimateCameraConfig : characterCameraConfig
+        const charCamera = cameraConfig[store.selectedCharacterId]
         if (charCamera) {
           if (charCamera.zoom !== undefined) {
-            manualCamera.zoom = charCamera.zoom
-            defaultZoom = charCamera.zoom
+            // For ultimate mode, invert zoom (lower number = smaller/more zoomed out)
+            const zoomValue = store.animationCategory === 'ultimate' ? 1 / charCamera.zoom : charCamera.zoom
+            manualCamera.zoom = zoomValue
+            defaultZoom = zoomValue
           }
           if (charCamera.x !== undefined) {
             manualCamera.position.x = charCamera.x
@@ -2113,6 +2138,10 @@ async function load() {
   updateCanvasPointerEvents(player)
 }
 watch(() => store.selectedCharacterId, () => {
+  // Clear any pending ultimate mode timers from previous character
+  pendingUltimateTimers.forEach(timerId => clearTimeout(timerId))
+  pendingUltimateTimers = []
+  
   preloadSelectedCharacterAudio()
   if (recorder && recorder.state === 'recording') {
     cancelExport = true
@@ -2122,6 +2151,7 @@ watch(() => store.selectedCharacterId, () => {
     cancelExport = true
   }
   resetComposite()
+  ultimateClickMotionIndex = 0 // Reset motion index when character changes
   store.animationCategory = 'character'
   void load()
 })
@@ -2136,6 +2166,7 @@ watch(() => store.animationCategory, category => {
     cancelExport = true
   }
   resetComposite()
+  ultimateClickMotionIndex = 0 // Reset motion index when changing modes
   void load()
 })
 
@@ -2432,8 +2463,7 @@ function playNextCharacterAudio() {
 function canTriggerCharacterMotion() {
   if (
     !player ||
-    store.animationCategory !== 'character' ||
-    store.selectedAnimation !== CHARACTER_IDLE_ANIMATION ||
+    (store.animationCategory !== 'character' && store.animationCategory !== 'ultimate') ||
     !store.playing ||
     store.layerSelectionEnabled ||
     editingBackground.value ||
@@ -2450,9 +2480,48 @@ function canTriggerCharacterMotion() {
     return false
   }
 
+  // For character mode, require idle animation
+  if (store.animationCategory === 'character' && store.selectedAnimation !== CHARACTER_IDLE_ANIMATION) {
+    return false
+  }
+
   const state = player.animationState
   const current = state?.getCurrent(0)
-  if (!state || current?.animation?.name !== CHARACTER_IDLE_ANIMATION || current.next) return false
+  
+  if (!state || current?.next) {
+    return false
+  }
+
+  // For ultimate mode, check for ultimate click motions
+  if (store.animationCategory === 'ultimate') {
+    const charId = store.selectedCharacterId
+    const clickMotions = ultimateClickMotionConfig[charId]
+    
+    if (!clickMotions) {
+      return false
+    }
+    
+    const [sequenceAnims, loopingAnim] = clickMotions
+    
+    // Helper to check if animation exists (either spine animation or composite)
+    const animExists = (animName: string) => {
+      // Check spine animations
+      if (state.data.skeletonData.animations.some(a => a.name === animName)) {
+        return true
+      }
+      // Check composite animations
+      const composites = getCompositesForCurrent()
+      return composites.some(c => c.name === animName)
+    }
+    
+    // Check if all animations in the sequence exist
+    return (sequenceAnims && sequenceAnims.every(anim => animExists(anim))) && animExists(loopingAnim)
+  }
+
+  // For character mode, also require idle animation
+  if (current?.animation?.name !== CHARACTER_IDLE_ANIMATION) {
+    return false
+  }
 
   return state.data.skeletonData.animations.some(animation => animation.name === CHARACTER_MOTION_ANIMATION)
 }
@@ -2461,6 +2530,162 @@ function playCharacterMotion() {
   if (!player || !canTriggerCharacterMotion()) return false
   const state = player.animationState
   if (!state) return false
+
+  // For ultimate mode, use the click motion config
+  if (store.animationCategory === 'ultimate') {
+    const charId = store.selectedCharacterId
+    const clickMotions = ultimateClickMotionConfig[charId]
+    if (!clickMotions) return false
+
+    const [sequenceAnims, loopingAnim, configDuration] = clickMotions
+    
+    if (!sequenceAnims || sequenceAnims.length === 0 || !loopingAnim) return false
+
+    const composites = getCompositesForCurrent()
+    
+    // Helper function to calculate duration of a single animation
+    const getAnimationDuration = (animName: string): number => {
+      const charMappings = cutsceneComposites[charId]
+      const compositeMapping = charMappings?.find((c: any) => c.name === animName)
+      
+      if (compositeMapping?.composite) {
+        const composite = compositeMapping.composite
+        let animDuration = 0
+        
+        if (Array.isArray(composite[0])) {
+          // Parallel animations format - sum up playDurations
+          composite[0].forEach((item: any) => {
+            if (item.playDuration) {
+              animDuration = Math.max(animDuration, item.playDuration)
+            }
+          })
+        } else {
+          // Sequential animations format - sum up all playDurations
+          composite.forEach((item: any) => {
+            if (typeof item === 'object' && item.playDuration) {
+              animDuration += item.playDuration
+            }
+          })
+        }
+        
+        // If composite has duration info, return it
+        if (animDuration > 0) return animDuration
+        
+        // For sequential format without playDuration, sum spine animation durations
+        if (!Array.isArray(composite[0])) {
+          let totalDuration = 0
+          composite.forEach((item: any) => {
+            const itemName = typeof item === 'string' ? item : item.name
+            const spineAnim = state.data.skeletonData.animations.find((a: any) => a.name === itemName)
+            if (spineAnim?.duration) {
+              totalDuration += spineAnim.duration
+            }
+          })
+          if (totalDuration > 0) return totalDuration
+        }
+        
+        // For parallel format without playDuration, try spine durations
+        if (Array.isArray(composite[0])) {
+          let maxDuration = 0
+          composite[0].forEach((item: any) => {
+            const itemName = typeof item === 'string' ? item : item.name
+            const spineAnim = state.data.skeletonData.animations.find((a: any) => a.name === itemName)
+            if (spineAnim?.duration) {
+              maxDuration = Math.max(maxDuration, spineAnim.duration)
+            }
+          })
+          if (maxDuration > 0) return maxDuration
+        }
+      }
+      
+      // Last resort - return 0, code will handle it
+      return 0
+    }
+    
+    // Check if first animation is a composite
+    const firstComposite = composites.find(c => c.name === sequenceAnims[0])
+    
+    if (firstComposite) {
+      // For composite, set it as selected animation
+      store.selectedAnimation = sequenceAnims[0]
+      
+      // If there are more animations in sequence, queue them
+      if (sequenceAnims.length > 1) {
+        // After first composite finishes, play the rest
+        let currentDelay = configDuration !== 0 ? configDuration * 1000 : getAnimationDuration(sequenceAnims[0]) * 1000
+        
+        for (let i = 1; i < sequenceAnims.length; i++) {
+          const nextAnimName = sequenceAnims[i]
+          const nextComposite = composites.find(c => c.name === nextAnimName)
+          
+          if (nextComposite) {
+            const timerId = window.setTimeout(() => {
+              store.selectedAnimation = nextAnimName
+            }, currentDelay)
+            pendingUltimateTimers.push(timerId)
+            
+            const nextDuration = getAnimationDuration(nextAnimName)
+            currentDelay += (nextDuration || 3.5) * 1000
+          }
+        }
+      }
+      
+      // Calculate total duration and transition to looping animation
+      let totalDuration = configDuration !== 0 ? configDuration : 0
+      sequenceAnims.forEach(animName => {
+        totalDuration += getAnimationDuration(animName)
+      })
+      
+      const timerId = window.setTimeout(() => {
+        store.selectedAnimation = loopingAnim
+      }, totalDuration * 1000)
+      pendingUltimateTimers.push(timerId)
+      
+      ultimateClickMotionIndex = (ultimateClickMotionIndex + 1) % clickMotions.length
+      return true
+    }
+    
+    // For spine animations only
+    state.setAnimation(0, sequenceAnims[0], false)
+    store.selectedAnimation = sequenceAnims[0]
+    
+    let currentDelay = 0
+    for (let i = 1; i < sequenceAnims.length; i++) {
+      const prevAnimObj = state.data.skeletonData.animations.find(a => a.name === sequenceAnims[i - 1])
+      const duration = prevAnimObj?.duration || 0
+      state.addAnimation(0, sequenceAnims[i], false, duration)
+      
+      // Update display after this animation finishes
+      currentDelay += duration
+      const timerId = window.setTimeout(() => {
+        store.selectedAnimation = sequenceAnims[i]
+      }, currentDelay * 1000)
+      pendingUltimateTimers.push(timerId)
+    }
+
+    const lastAnimObj = state.data.skeletonData.animations.find(a => a.name === sequenceAnims[sequenceAnims.length - 1])
+    const lastDuration = lastAnimObj?.duration || 0
+    state.addAnimation(0, loopingAnim, true, lastDuration)
+    
+    // Update display to looping animation after sequence finishes
+    let totalSequenceDuration = 0
+    sequenceAnims.forEach(name => {
+      const animObj = state.data.skeletonData.animations.find(a => a.name === name)
+      totalSequenceDuration += animObj?.duration || 0
+    })
+    const timerId = window.setTimeout(() => {
+      store.selectedAnimation = loopingAnim
+    }, totalSequenceDuration * 1000)
+    pendingUltimateTimers.push(timerId)
+    
+    startPlayerRenderLoop(player)
+    store.playing = true
+    
+    ultimateClickMotionIndex = (ultimateClickMotionIndex + 1) % clickMotions.length
+    return true
+  }
+
+  // For character mode, use the regular motion
   const motionAnimation = state.data.skeletonData.animations.find(
     animation => animation.name === CHARACTER_MOTION_ANIMATION,
   )
@@ -2496,9 +2721,17 @@ function onCharacterClickPointerUp(event: PointerEvent) {
   const isSameViewer = candidate.player === player && candidate.characterId === store.selectedCharacterId
   clearCharacterClickTracking()
 
-  if (isClick && isSameViewer && canTriggerCharacterMotion() && isCharacterHit(event.clientX, event.clientY)) {
+  // In ultimate mode, allow click anywhere. In other modes, require hitting character
+  const isValidClick = store.animationCategory === 'ultimate' 
+    ? isClick && isSameViewer && canTriggerCharacterMotion()
+    : isClick && isSameViewer && canTriggerCharacterMotion() && isCharacterHit(event.clientX, event.clientY)
+
+  if (isValidClick) {
     if (playCharacterMotion()) {
-      playNextCharacterAudio()
+      // Only play audio in character mode, not in ultimate mode
+      if (store.animationCategory === 'character') {
+        playNextCharacterAudio()
+      }
       emit('character-interaction')
     }
   }
@@ -2512,7 +2745,10 @@ function onCharacterClickPointerCancel(event: PointerEvent) {
 
 function startCharacterClickTracking(event: PointerEvent) {
   clearCharacterClickTracking()
-  if (!player || !event.isPrimary || !canTriggerCharacterMotion()) return
+  
+  if (!player || !event.isPrimary || !canTriggerCharacterMotion()) {
+    return
+  }
 
   characterClickCandidate = {
     pointerId: event.pointerId,
@@ -2639,6 +2875,8 @@ function onKeyDown(e: KeyboardEvent) {
       store.layerVisibility[last] = true
       store.selectedLayerName = last
     }
+  } else if (key === 'z') {
+    resetCamera()
   } else if (e.key === 'Escape') {
     while (store.hiddenLayerStack.length > 0) {
       const last = store.hiddenLayerStack.pop()!
@@ -3250,10 +3488,15 @@ function playAnimationSequence(animationNames: string[]) {
   
   const state = player.animationState
   
-  // Play first animation (non-looping)
+  if (animationNames.length === 1) {
+    setSpineAnimation(player, animationNames[0], { loop: true })
+    startPlayerRenderLoop(player)
+    store.playing = true
+    return
+  }
+  
   setSpineAnimation(player, animationNames[0], { loop: false })
   
-  // Queue remaining animations
   for (let i = 1; i < animationNames.length; i++) {
     const isLast = i === animationNames.length - 1
     const entry = state.addAnimation(0, animationNames[i], isLast)
@@ -3267,6 +3510,9 @@ function playAnimationSequence(animationNames: string[]) {
 }
 
 function setHitAreaVisible(visible: boolean) {
+  // Force visible if debug mode is enabled
+  const shouldShow = visible || DEBUG_HIT_AREAS
+
   if (!overlayCanvas.value) {
     console.warn('Overlay canvas not ready for hit areas')
     return
@@ -3293,7 +3539,7 @@ function setHitAreaVisible(visible: boolean) {
       hitAreaManager.loadAreas(areas)
     }
 
-    hitAreaManager.setVisible(visible)
+    hitAreaManager.setVisible(shouldShow)
     
     // Add click listener for hit areas
     if (container.value && !container.value.dataset.hitAreaListenerAdded) {
@@ -3302,7 +3548,7 @@ function setHitAreaVisible(visible: boolean) {
     }
     
     // Start drawing loop if showing, stop if hiding
-    if (visible) {
+    if (shouldShow) {
       drawHitAreas()
     } else {
       if (hitAreaRenderHandle !== null) {
@@ -3323,16 +3569,9 @@ function reloadHitAreas() {
   if (!hitAreaManager) return
 
   try {
-    const charId = store.selectedCharacterId
-    const currentAnim = store.selectedAnimation
-    const charAreas = hitAreaConfig[charId]
-    
-    if (charAreas) {
-      // Try to get animation-specific areas first, then fall back to general areas
-      const areas = (charAreas as any)[currentAnim] || charAreas
-      if (areas) {
-        hitAreaManager.loadAreas(areas as CharacterHitAreas)
-      }
+    const areas = getHitAreasForCurrentState()
+    if (areas) {
+      hitAreaManager.loadAreas(areas as CharacterHitAreas)
     }
   } catch (error) {
     console.warn('Error reloading hit areas:', error)
@@ -3348,33 +3587,39 @@ function getHitAreasForCurrentState(): CharacterHitAreas | null {
     return null
   }
 
-  // Get the currently selected animation (which should be idle1 or idle2 when in dating mode)
-  const currentAnim = store.selectedAnimation
-  
-  // If the current animation is idle1 or idle2, use that directly
-  if (currentAnim && (currentAnim === 'idle1' || currentAnim === 'idle2')) {
-    if (config[currentAnim]) {
-      return config[currentAnim] as CharacterHitAreas
-    }
-  }
-  
-  // Try to get from player's current animation if no animation selected
-  let detectedIdleState: 'idle1' | 'idle2' | null = null
+  // Try to get from player's current animation first (most reliable)
+  let detectedIdleState: 'idle1' | 'idle2' | 'idle3' | null = null
   if (player?.animationState) {
     const track = player.animationState.getCurrent(0)
     if (track?.animation?.name) {
       const animName = track.animation.name
-      if (animName.includes('idle2')) {
+      
+      // Check if this is a love motion - if so, idle3 is coming next
+      const loveMotion = loveMotionConfig[charId]
+      if (loveMotion && animName === loveMotion) {
+        detectedIdleState = 'idle3'
+      } else if (animName.includes('idle3')) {
+        detectedIdleState = 'idle3'
+      } else if (animName.includes('idle2')) {
         detectedIdleState = 'idle2'
-      } else if (animName.includes('idle')) {
+      } else if (animName.includes('idle1')) {
         detectedIdleState = 'idle1'
       }
     }
   }
   
-  // Return the detected idle state
+  // If detected from player, use that (don't fall back if it's a motion)
   if (detectedIdleState && config[detectedIdleState]) {
     return config[detectedIdleState] as CharacterHitAreas
+  }
+
+  // Fallback to store.selectedAnimation only if no idle was detected
+  const currentAnim = store.selectedAnimation
+  
+  if (currentAnim && (currentAnim === 'idle1' || currentAnim === 'idle2' || currentAnim === 'idle3')) {
+    if (config[currentAnim]) {
+      return config[currentAnim] as CharacterHitAreas
+    }
   }
   
   // Default to idle1 if nothing else matched
@@ -3400,6 +3645,16 @@ function drawHitAreas() {
   }
 
   try {
+    // Check if animation has changed and reload hit areas if needed
+    if (player?.animationState) {
+      const track = player.animationState.getCurrent(0)
+      const currentAnim = track?.animation?.name
+      if (currentAnim && currentAnim !== lastTrackedAnimation) {
+        lastTrackedAnimation = currentAnim
+        reloadHitAreas()
+      }
+    }
+    
     // Update hit area position based on camera
     updateHitAreaPosition()
     hitAreaManager.draw()

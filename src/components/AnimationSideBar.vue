@@ -71,7 +71,7 @@
       <div v-if="!currentChar?.customFiles" class="p-2">
         <div class="flex flex-col gap-2">
           <button
-            @click="store.animationCategory = 'character'"
+            @click="() => { store.animationCategory = 'character'; store.selectedAnimation = '' }"
             class="w-full py-2 rounded-full flex items-center justify-center font-semibold text-sm transition-all"
             :class="store.animationCategory === 'character' 
               ? 'bg-indigo-600 text-white shadow-lg' 
@@ -80,7 +80,7 @@
             Character
           </button>
           <button
-            @click="store.animationCategory = 'ultimate'"
+            @click="() => { store.animationCategory = 'ultimate'; store.selectedAnimation = '' }"
             :disabled="!currentChar?.cutscene"
             class="w-full py-2 rounded-full flex items-center justify-center font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             :class="store.animationCategory === 'ultimate' 
@@ -90,7 +90,7 @@
             Ultimate
           </button>
           <button
-            @click="store.animationCategory = 'dating'"
+            @click="() => { store.animationCategory = 'dating'; store.selectedAnimation = '' }"
             :disabled="!currentChar?.dating"
             class="w-full py-2 rounded-full flex items-center justify-center font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             :class="store.animationCategory === 'dating' 
@@ -146,7 +146,38 @@
           </div>
         </div>
       </div>
-      <div class="p-2 flex flex-col gap-2">
+      <div class="p-2 overflow-hidden relative">
+        <div class="flex items-center justify-between pr-2">
+          <span></span>
+          <button
+            @click="toggleLoveMode"
+            :disabled="hitAreaScale < 0.5 || !hasIdle3"
+            class="transition-all relative"
+            :class="(hitAreaScale >= 0.5 && hasIdle3)
+              ? 'cursor-pointer hover:scale-110' 
+              : 'cursor-not-allowed opacity-50'"
+          >
+            <svg class="w-10 h-10 transition-colors" :class="[loveMode && 'animate-heartbeat']" viewBox="0 0 24 24" fill="none" stroke="url(#heartGradient)" stroke-width="1">
+              <defs>
+                <linearGradient id="heartGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#ff69b4;stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:#d91e63;stop-opacity:1" />
+                </linearGradient>
+              </defs>
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor" :style="{ color: hitAreaScale >= 0.5 ? '#ff69b4' : '#4b5563' }"></path>
+            </svg>
+            <span v-if="loveMode" class="absolute inset-0 animate-ripple rounded-full" style="border: 2px solid #ff69b4;"></span>
+            <span v-if="loveMode" class="absolute inset-0 animate-ripple rounded-full" style="border: 2px solid #d91e63; animation-delay: 0.2s;"></span>
+          </button>
+        </div>
+        <!-- Floating hearts -->
+        <div v-if="loveMode" class="absolute inset-0 pointer-events-none">
+          <svg v-for="i in 20" :key="i" class="absolute animate-float-heart" :style="{ width: '16px', height: '16px', left: (85 - i * 2) + '%', top: (20 + Math.random() * 60) + '%', animationDelay: (i * 0.35 - 7) + 's' }" viewBox="0 0 24 24" fill="currentColor" style="color: #ff69b4;">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+      </div>
+      <div class="px-2 -mt-2 pb-2 flex flex-col gap-2">
         <span>Skins</span>
         <select
           v-model="store.selectedSkin"
@@ -305,8 +336,10 @@ const layerFilter = ref('')
 const yappingMode = ref(false)
 const hitAreaVisible = ref(false)
 const hitAreaScale = ref(0)
+const loveMode = ref(false)
+const isHeartBeating = ref(false)
 
-const emit = defineEmits(['select', 'reset-camera', 'screenshot', 'export-animation', 'category-change', 'yapping-mode', 'hit-area-toggle', 'mood-changed'])
+const emit = defineEmits(['select', 'reset-camera', 'screenshot', 'export-animation', 'category-change', 'yapping-mode', 'hit-area-toggle', 'mood-changed', 'love-mode-toggle'])
 
 function select(name: string) {
   emit('select', name)
@@ -337,6 +370,7 @@ function handleClickOutside(e: MouseEvent) {
 const selectedAnimation = computed(() => store.selectedAnimation)
 const toggleLabel = computed(() => (store.playing ? 'Pause' : 'Play'))
 const currentChar = computed(() => store.characters.find(c => c.id === store.selectedCharacterId))
+const hasIdle3 = computed(() => animations.value.includes('idle3'))
 const layerSourceSeparator = ' > '
 const hasYappingAnimation = computed(() => {
   const result = animations.value.some(anim => anim.includes('_face0_talk'))
@@ -381,6 +415,11 @@ function getLayerBaseName(name: string) {
 }
 
 function onSliderChange() {
+  // Don't emit mood changes if love mode is active
+  if (loveMode.value) {
+    return
+  }
+  
   // Always emit mood-changed, then snap to nearest position
   if (hitAreaScale.value >= 0.5) {
     hitAreaScale.value = 1
@@ -412,6 +451,23 @@ function deselectAllLayers() {
   filteredLayers.value.forEach(layer => {
     store.layerVisibility[layer.key] = false
   })
+}
+
+function toggleLoveMode() {
+  loveMode.value = !loveMode.value
+  
+  // Only switch animations if in Fated Guest (dating) mode
+  if (store.animationCategory === 'dating') {
+    if (loveMode.value) {
+      // When activating love mode, emit love-mode-toggle event (which will handle motion + idle3)
+      emit('love-mode-toggle', { enabled: true, animation: 'idle3' })
+    } else {
+      // When deactivating love mode, emit love-mode-toggle event (which will switch back to idle2)
+      emit('love-mode-toggle', { enabled: false, animation: 'idle2' })
+    }
+  } else {
+    emit('love-mode-toggle', loveMode.value)
+  }
 }
 
 watch(() => store.animationCategory, () => {
@@ -472,6 +528,18 @@ watch(() => store.selectedCharacterId, () => {
     store.animationCategory = 'character'
   }
 });
+
+// Reset mood to Morning when switching animation categories
+watch(() => store.animationCategory, () => {
+  hitAreaScale.value = 0 // Reset to Morning Mood when changing modes
+})
+
+watch(hitAreaScale, (newScale) => {
+  // Auto-deactivate love mode when switching to Morning Mood
+  if (newScale < 0.5 && loveMode.value) {
+    loveMode.value = false
+  }
+})
 
 watch(hitAreaVisible, (visible) => {
   try {
@@ -557,5 +625,57 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
   box-shadow: 0 0 16px rgba(167, 139, 250, 0.9), inset -2px -2px 8px rgba(0, 0, 0, 0.3);
   outline: none;
   transition: background 0.3s ease;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes float-heart {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-280px) translateY(0);
+    opacity: 0;
+  }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 0.6s ease-in-out infinite;
+}
+
+.animate-ripple {
+  animation: ripple 0.6s ease-out infinite;
+}
+
+.animate-float-heart {
+  animation: float-heart 4s ease-out infinite;
 }
 </style>

@@ -114,6 +114,7 @@
           @yapping-mode="onYappingMode"
           @hit-area-toggle="onHitAreaToggle"
           @mood-changed="onMoodChanged"
+          @love-mode-toggle="onLoveMode"
           class="lg:w-64"
         />
       </div>
@@ -141,6 +142,7 @@
             @export-animation="onExportAnimation"
             @hit-area-toggle="onHitAreaToggle"
             @mood-changed="onMoodChanged"
+            @love-mode-toggle="onLoveMode"
           />
         </div>
         <div class="flex-1 min-h-0">
@@ -168,7 +170,7 @@ import CharacterSidebar from '@/components/CharacterSideBar.vue'
 import AnimationSidebar from '@/components/AnimationSideBar.vue'
 import SpineViewer from '@/components/SpineViewer.vue'
 import FeatureTutorial from '@/components/FeatureTutorial.vue'
-import { moodMotionConfig } from '@/utils/hitAreaConfig'
+import { moodMotionConfig, ultimateMoodMotionConfig, loveMotionConfig } from '@/utils/hitAreaConfig'
 import { ref, watchEffect, computed, watch, onBeforeUnmount, onMounted } from 'vue'
 import { useCharacterStore } from '@/stores/characterStore'
 import { useSettingsStore } from '@/stores/settingsStore'
@@ -480,7 +482,8 @@ function onMoodChanged(data: { mood: string; animation: string }) {
   if (!viewerRef.value) return
   
   const charId = store.selectedCharacterId
-  const motionAnim = moodMotionConfig[charId]
+  const motionConfig = store.animationCategory === 'ultimate' ? ultimateMoodMotionConfig : moodMotionConfig
+  const motionAnim = motionConfig[charId]
   
   // Always update store.selectedAnimation to the final idle state (idle1 or idle2)
   store.selectedAnimation = data.animation
@@ -512,6 +515,37 @@ function onMoodChanged(data: { mood: string; animation: string }) {
     }
   } catch (error) {
     console.error('Error playing animation sequence:', error)
+    store.selectedAnimation = data.animation
+  }
+}
+
+function onLoveMode(data: { enabled: boolean; animation: string }) {
+  if (!viewerRef.value) return
+  
+  const charId = store.selectedCharacterId
+  const motionAnim = loveMotionConfig[charId]
+  
+  try {
+    const viewer = viewerRef.value as any
+    
+    if (typeof viewer.playAnimationSequence !== 'function') {
+      store.selectedAnimation = data.animation
+      return
+    }
+    
+    if (motionAnim && data.animation === 'idle3') {
+      viewer.playAnimationSequence([motionAnim, data.animation])
+    } else {
+      viewer.playAnimationSequence([data.animation])
+    }
+    
+    // Only reload hit areas for idle3 detection - don't update selectedAnimation yet
+    // as it will trigger the watcher and reset the animation
+    if (typeof viewer.reloadHitAreas === 'function') {
+      viewer.reloadHitAreas()
+    }
+  } catch (error) {
+    console.error('Error playing love mode animation:', error)
     store.selectedAnimation = data.animation
   }
 }

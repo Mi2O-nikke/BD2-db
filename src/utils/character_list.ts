@@ -1028,7 +1028,8 @@ export default {
     "cutscene": "cutscene_char003892",
     "dating": "illust_dating14",
     "datingUsesTracks": true,
-    "audio": "Char003892_BattleReady"
+    "audio": "Char003892_BattleReady",
+    "displayMode": "updated"
   },
   "003901": {
     "charName": "Sonya",
@@ -1655,7 +1656,8 @@ export default {
     "cutscene": "cutscene_char067104",
     "dating": "illust_dating19",
     "datingUsesTracks": true,
-    "audio": "Char067104_BattleReady"
+    "audio": "Char067104_BattleReady",
+    "displayMode": "updated"
   },
   "067201": {
     "charName": "Venaka",
