@@ -995,7 +995,7 @@ export default {
     "cutscene": "cutscene_char003793",
     "dating": "",
     "audio": "Char003793_BattleReady",
-    "displayMode": "new"
+    "displayMode": "updated"
   },
   "003801": {
     "charName": "Liberta",
@@ -1216,6 +1216,42 @@ export default {
     "cutscene": "cutscene_char021001",
     "dating": "",
     "audio": "Char021001_BattleReady"
+  },
+  "021101": {
+    "charName": "Kyouka Uzen",
+    "costumeName": "Eternal Chains",
+    "spine": "char021101",
+    "cutscene": "cutscene_char021101",
+    "dating": "",
+    "audio": "Char021101_BattleReady",
+    "displayMode": "new"
+  },
+  "021201": {
+    "charName": "Tenka Izumo",
+    "costumeName": "Ame-no-Mitori",
+    "spine": "char021201",
+    "cutscene": "cutscene_char021201",
+    "dating": "",
+    "audio": "Char021201_BattleReady",
+    "displayMode": "new"
+  },
+  "021291": {
+    "charName": "Tenka Izumo",
+    "costumeName": "Special Date",
+    "spine": "char021291",
+    "cutscene": "cutscene_char021291",
+    "dating": "",
+    "audio": "Char021291_BattleReady",
+    "displayMode": "new"
+  },
+  "021301": {
+    "charName": "Ren Yamashiro",
+    "costumeName": "Lord of the Cosmos",
+    "spine": "char021301",
+    "cutscene": "",
+    "dating": "",
+    "audio": "Char021301_BattleReady",
+    "displayMode": "new"
   },
   "060301": {
     "charName": "Alec",
@@ -1819,7 +1855,7 @@ export default {
     "cutscene": "cutscene_char067901",
     "dating": "",
     "audio": "Char067901_BattleReady",
-    "displayMode": "new"
+    "displayMode": "updated"
   },
   "ellin": {
     "charName": "Ellin (Npc)",

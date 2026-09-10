@@ -1,5 +1,14 @@
 export default [
   {
+    "date": "10/09/2026",
+    "changes": [
+      "Added Kyouka Uzen: Eternal Chains, Tenka Izumo: Ame-no-Mitori, Tenka Izumo: Special Date and Ren Yamashiro: Lord of the Cosmos icons and voices.",
+      "Added Kyouka Uzen: Eternal Chains, Tenka Izumo: Ame-no-Mitori, Tenka Izumo: Special Date and Ren Yamashiro: Lord of the Cosmos standins animations.",
+      "Added Kyouka Uzen: Eternal Chains, Tenka Izumo: Ame-no-Mitori and Tenka Izumo: Special Date ultimate animations.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
     "date": "27/08/2026",
     "changes": [
       "Updated Yuri: Forever Mascot fated guest animations (forgot to do that in the last update).",

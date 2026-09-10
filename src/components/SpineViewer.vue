@@ -136,7 +136,7 @@ import JSZip from 'jszip'
 import type { Animation, SceneRenderer, Slot } from '@esotericsoftware/spine-player'
 import type { SpinePlayerInternal } from '@/types/spine-player-internal'
 import { HitAreaManager } from '@/utils/hitAreaManager'
-import { datingSkinOverrideConfig, characterCameraConfig, ultimateCameraConfig, ultimateMoodMotionConfig, ultimateClickMotionConfig, DEBUG_HIT_AREAS, loveMotionConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
+import { datingSkinOverrideConfig, characterCameraConfig, ultimateCameraConfig, characterModeZoomConfig, ultimateMoodMotionConfig, ultimateClickMotionConfig, DEBUG_HIT_AREAS, loveMotionConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
 import hitAreaConfig from '@/utils/hitAreaConfig'
 import cutsceneComposites, {
   type CutsceneAnim,
@@ -2086,14 +2086,26 @@ async function load() {
       defaultCameraPos = new Vector2(manualCamera.position.x, manualCamera.position.y)
       defaultZoom = manualCamera.zoom
       
-      // Apply character-specific camera settings in dating or ultimate mode
-      if (store.animationCategory === 'dating' || store.animationCategory === 'ultimate') {
-        const cameraConfig = store.animationCategory === 'ultimate' ? ultimateCameraConfig : characterCameraConfig
+      // Apply character-specific camera settings based on animation category
+      if (store.animationCategory === 'character' || store.animationCategory === 'dating' || store.animationCategory === 'ultimate') {
+        let cameraConfig
+        let shouldInvert = false
+        
+        if (store.animationCategory === 'ultimate') {
+          cameraConfig = ultimateCameraConfig
+          shouldInvert = true
+        } else if (store.animationCategory === 'dating') {
+          cameraConfig = characterCameraConfig
+          shouldInvert = false
+        } else {
+          cameraConfig = characterModeZoomConfig
+          shouldInvert = true
+        }
+        
         const charCamera = cameraConfig[store.selectedCharacterId]
         if (charCamera) {
           if (charCamera.zoom !== undefined) {
-            // For ultimate mode, invert zoom (lower number = smaller/more zoomed out)
-            const zoomValue = store.animationCategory === 'ultimate' ? 1 / charCamera.zoom : charCamera.zoom
+            const zoomValue = shouldInvert ? 1 / charCamera.zoom : charCamera.zoom
             manualCamera.zoom = zoomValue
             defaultZoom = zoomValue
           }

@@ -8,6 +8,11 @@ export interface CharacterCameraConfig {
   y?: number
 }
 
+//character mode zoom
+export const characterModeZoomConfig: Record<string, CharacterCameraConfig> = {
+  '021101': { zoom: 0.7, x: 0, y: -150 },
+}
+
 //fated guest zoom
 export const characterCameraConfig: Record<string, CharacterCameraConfig> = {
   '003892': { zoom: 4.0, x: -100, y: -500 },
@@ -33,6 +38,9 @@ type UltimateCharacterConfig = [camera: CharacterCameraConfig, initialMotion: st
 export const ultimateCharacterConfig: Record<string, UltimateCharacterConfig> = {
   '003793': [{ zoom: 0.5, x: 0, y: 150 }, 'loop_1', clickMotion(['A_cut', 'B_cut'], 'loop_2')],
   '003892': [{ zoom: 0.4, x: 0, y: 300 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
+  '021101': [{ zoom: 0.57, x: 0, y: -250 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
+  '021201': [{ zoom: 0.35, x: 0, y: -320 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
+  '021291': [{ zoom: 0.38, x: 0, y: -600 }, 'loop', clickMotion(['A_cut', 'B_cut'], 'loop2')],
   '065193': [{ zoom: 0.4, x: 0, y: -100 }, 'loop', clickMotion(['cut_A_all', 'cut_B_all'], 'loop_2')],
   '067104': [{ zoom: 0.4, x: 0, y: -100 }, 'loop_1', clickMotion(['cut_all'], 'loop_2')],
   '067901': [{ zoom: 0.4, x: 0, y: -200 }, 'loop_1', clickMotion(['cut_A_all', 'cut_B_all'], 'loop_2')],

@@ -1771,6 +1771,30 @@ const cutsceneComposites: Record<string, CutsceneCompositeEntry> = {
       name: "cut_all",
       composite: ["cut_A_all", "cut_B_all"]
     }
+  ],
+  "021101": [
+    {
+      name: "cut_all",
+      composite: [
+        { name: "cut_A", playDuration: 5.5 },
+        { name: "cut_B", playDuration: 5 }
+      ]
+    }
+  ],
+  "021201": [
+    {
+      name: "cut_all",
+      composite: [
+        { name: "cut_A", playDuration: 3 },
+        { name: "cut_B", playDuration: 5.5 }
+      ]
+    }
+  ],
+  "021291": [
+    {
+      name: "cut_all",
+      composite: [{ name: "A_cut", playDuration: 4.5 }, "B_cut"]
+    }
   ]
 }
 
