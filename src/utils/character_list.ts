@@ -1248,9 +1248,18 @@ export default {
     "charName": "Ren Yamashiro",
     "costumeName": "Lord of the Cosmos",
     "spine": "char021301",
-    "cutscene": "",
+    "cutscene": "cutscene_char021301",
     "dating": "",
     "audio": "Char021301_BattleReady",
+    "displayMode": "new"
+  },
+  "021391": {
+    "charName": "Ren Yamashiro",
+    "costumeName": "Role Reversal",
+    "spine": "char021391",
+    "cutscene": "cutscene_char021391",
+    "dating": "",
+    "audio": "Char021391_BattleReady",
     "displayMode": "new"
   },
   "060301": {

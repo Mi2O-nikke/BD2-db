@@ -1,9 +1,21 @@
 export default [
   {
+    "date": "23/09/2026",
+    "changes": [
+      "Added Ren Yamashiro: Lord of the Cosmos and Ren Yamashiro: Role Reversal ultimate animations.",
+      "Added Ren Yamashiro: Role Reversal standing animations.",
+      "Added Ren Yamashiro: Role Reversal icon and voices.",
+      "Made webm exports export at 60 fps no matter what GPU do you have.",
+      "Fixed screenshot and animation export in Safari.",
+      "Fixed transparency issue in composite animations.",
+      "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
+    ]
+  },
+  {
     "date": "10/09/2026",
     "changes": [
       "Added Kyouka Uzen: Eternal Chains, Tenka Izumo: Ame-no-Mitori, Tenka Izumo: Special Date and Ren Yamashiro: Lord of the Cosmos icons and voices.",
-      "Added Kyouka Uzen: Eternal Chains, Tenka Izumo: Ame-no-Mitori, Tenka Izumo: Special Date and Ren Yamashiro: Lord of the Cosmos standins animations.",
+      "Added Kyouka Uzen: Eternal Chains, Tenka Izumo: Ame-no-Mitori, Tenka Izumo: Special Date and Ren Yamashiro: Lord of the Cosmos standing animations.",
       "Added Kyouka Uzen: Eternal Chains, Tenka Izumo: Ame-no-Mitori and Tenka Izumo: Special Date ultimate animations.",
       "As always, if you like my work and want to support me so I can keep working on adding more features and improving the site you can do so by donating in either my Ko-Fi or Patreon <3."
     ]

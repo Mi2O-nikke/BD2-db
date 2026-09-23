@@ -41,6 +41,9 @@ export const ultimateCharacterConfig: Record<string, UltimateCharacterConfig> = 
   '021101': [{ zoom: 0.57, x: 0, y: -250 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
   '021201': [{ zoom: 0.35, x: 0, y: -320 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
   '021291': [{ zoom: 0.38, x: 0, y: -600 }, 'loop', clickMotion(['A_cut', 'B_cut'], 'loop2')],
+  '021301': [{ zoom: 0.33, x: 0, y: 100 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
+  '021391': [{ zoom: 0.28, x: 0, y: 0 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
+
   '065193': [{ zoom: 0.4, x: 0, y: -100 }, 'loop', clickMotion(['cut_A_all', 'cut_B_all'], 'loop_2')],
   '067104': [{ zoom: 0.4, x: 0, y: -100 }, 'loop_1', clickMotion(['cut_all'], 'loop_2')],
   '067901': [{ zoom: 0.4, x: 0, y: -200 }, 'loop_1', clickMotion(['cut_A_all', 'cut_B_all'], 'loop_2')],
@@ -234,7 +237,7 @@ const hitAreaConfig: HitAreaConfig = {
       16: { x: -20, y: 300, animation: 'mix2_38_1' },
     }),
   },
-  
+
 
 }
 
