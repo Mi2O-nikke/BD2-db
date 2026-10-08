@@ -1088,6 +1088,15 @@ export default {
     "datingUsesTracks": true,
     "audio": "Char004102_BattleReady"
   },
+  "004192": {
+    "charName": "Tyr",
+    "costumeName": "Clumsy Wuff",
+    "spine": "char004192",
+    "cutscene": "cutscene_char004192",
+    "dating": "",
+    "audio": "Char004192_BattleReady",
+    "displayMode": "new"
+  },
   "004201": {
     "charName": "Palette",
     "costumeName": "Shattered Dream",
@@ -1112,6 +1121,15 @@ export default {
     "cutscene": "cutscene_char004301",
     "dating": "",
     "audio": "Char004301_BattleReady"
+  },
+  "004302": {
+    "charName": "Nekyndalia",
+    "costumeName": "Unraveling Mummy",
+    "spine": "char004302",
+    "cutscene": "cutscene_char004302",
+    "dating": "",
+    "audio": "Char004302_BattleReady",
+    "displayMode": "new"
   },
   "020001": {
     "charName": "Eris",
@@ -1223,8 +1241,7 @@ export default {
     "spine": "char021101",
     "cutscene": "cutscene_char021101",
     "dating": "",
-    "audio": "Char021101_BattleReady",
-    "displayMode": "new"
+    "audio": "Char021101_BattleReady"
   },
   "021201": {
     "charName": "Tenka Izumo",
@@ -1232,8 +1249,7 @@ export default {
     "spine": "char021201",
     "cutscene": "cutscene_char021201",
     "dating": "",
-    "audio": "Char021201_BattleReady",
-    "displayMode": "new"
+    "audio": "Char021201_BattleReady"
   },
   "021291": {
     "charName": "Tenka Izumo",
@@ -1241,8 +1257,7 @@ export default {
     "spine": "char021291",
     "cutscene": "cutscene_char021291",
     "dating": "",
-    "audio": "Char021291_BattleReady",
-    "displayMode": "new"
+    "audio": "Char021291_BattleReady"
   },
   "021301": {
     "charName": "Ren Yamashiro",
@@ -1250,8 +1265,7 @@ export default {
     "spine": "char021301",
     "cutscene": "cutscene_char021301",
     "dating": "",
-    "audio": "Char021301_BattleReady",
-    "displayMode": "new"
+    "audio": "Char021301_BattleReady"
   },
   "021391": {
     "charName": "Ren Yamashiro",
@@ -1259,8 +1273,7 @@ export default {
     "spine": "char021391",
     "cutscene": "cutscene_char021391",
     "dating": "",
-    "audio": "Char021391_BattleReady",
-    "displayMode": "new"
+    "audio": "Char021391_BattleReady"
   },
   "060301": {
     "charName": "Alec",
@@ -1863,8 +1876,16 @@ export default {
     "spine": "char067901",
     "cutscene": "cutscene_char067901",
     "dating": "",
-    "audio": "Char067901_BattleReady",
-    "displayMode": "updated"
+    "audio": "Char067901_BattleReady"
+  },
+  "067902": {
+    "charName": "Aquila",
+    "costumeName": "Sealed Desires",
+    "spine": "char067902",
+    "cutscene": "",
+    "dating": "",
+    "audio": "Char067902_BattleReady",
+    "displayMode": "new"
   },
   "ellin": {
     "charName": "Ellin (Npc)",
