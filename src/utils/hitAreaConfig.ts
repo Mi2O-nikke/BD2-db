@@ -49,6 +49,7 @@ export const ultimateCharacterConfig: Record<string, UltimateCharacterConfig> = 
   '065193': [{ zoom: 0.4, x: 0, y: -100 }, 'loop', clickMotion(['cut_A_all', 'cut_B_all'], 'loop_2')],
   '067104': [{ zoom: 0.4, x: 0, y: -100 }, 'loop_1', clickMotion(['cut_all'], 'loop_2')],
   '067901': [{ zoom: 0.4, x: 0, y: -200 }, 'loop_1', clickMotion(['cut_A_all', 'cut_B_all'], 'loop_2')],
+  '067902': [{ zoom: 0.3, x: 0, y: -50 }, 'loop', clickMotion(['cut_A', 'cut_B'], 'loop_2')],
 }
 
 

@@ -1882,7 +1882,7 @@ export default {
     "charName": "Aquila",
     "costumeName": "Sealed Desires",
     "spine": "char067902",
-    "cutscene": "",
+    "cutscene": "cutscene_char067902",
     "dating": "",
     "audio": "Char067902_BattleReady",
     "displayMode": "new"
