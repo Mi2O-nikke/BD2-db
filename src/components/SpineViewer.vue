@@ -1954,13 +1954,12 @@ async function load() {
           
           if (initialMotion) {
             // Check if it's a composite or spine animation
-            const composites = getCompositesForCurrent()
-            const isComposite = composites.some(c => c.name === initialMotion)
+            const compositeMapping = getCompositeForAnimation(initialMotion)
             
-            if (isComposite) {
+            if (compositeMapping) {
               // Play composite animation
               store.selectedAnimation = initialMotion
-              void startComposite(p, { name: initialMotion }, 0)
+              void startComposite(p, compositeMapping, 0)
               if (store.playing) {
                 p.play()
               } else {
