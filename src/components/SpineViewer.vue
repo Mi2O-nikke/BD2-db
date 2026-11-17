@@ -136,7 +136,7 @@ import JSZip from 'jszip'
 import type { Animation, SceneRenderer, Slot } from '@esotericsoftware/spine-player'
 import type { SpinePlayerInternal } from '@/types/spine-player-internal'
 import { HitAreaManager } from '@/utils/hitAreaManager'
-import { datingSkinOverrideConfig, characterCameraConfig, ultimateCameraConfig, characterModeZoomConfig, ultimateMoodMotionConfig, ultimateClickMotionConfig, DEBUG_HIT_AREAS, loveMotionConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
+import { datingSkinOverrideConfig, characterCameraConfig, ultimateCameraConfig, characterModeZoomConfig, ultimateMoodMotionConfig, ultimateClickMotionConfig, ultimateCharacterConfig, DEBUG_HIT_AREAS, loveMotionConfig, type CharacterHitAreas } from '@/utils/hitAreaConfig'
 import hitAreaConfig from '@/utils/hitAreaConfig'
 import cutsceneComposites, {
   type CutsceneAnim,
@@ -1946,22 +1946,40 @@ async function load() {
       slotNames.forEach(name => previousLayerVisibility.set(name, true))
 
       const selectAnimation = () => {
-        // For ultimate mode, play the motion animation automatically on load
+        // For ultimate mode, play the initial motion automatically on load
         if (store.animationCategory === 'ultimate') {
           const charId = store.selectedCharacterId
-          const motionAnim = ultimateMoodMotionConfig[charId]
-          if (motionAnim && names.includes(motionAnim)) {
-            // Play motion first
-            store.selectedAnimation = motionAnim
-            resetComposite()
-            startPlayerRenderLoop(p)
-            setSpineAnimation(p, motionAnim, { loop: false })
-            if (store.playing) {
-              p.play()
-            } else {
-              p.pause()
+          const ultimateConfig = ultimateCharacterConfig[charId]
+          const initialMotion = ultimateConfig ? ultimateConfig[1] : undefined
+          
+          if (initialMotion) {
+            // Check if it's a composite or spine animation
+            const composites = getCompositesForCurrent()
+            const isComposite = composites.some(c => c.name === initialMotion)
+            
+            if (isComposite) {
+              // Play composite animation
+              store.selectedAnimation = initialMotion
+              void startComposite(p, { name: initialMotion }, 0)
+              if (store.playing) {
+                p.play()
+              } else {
+                p.pause()
+              }
+              return
+            } else if (names.includes(initialMotion)) {
+              // Play spine animation
+              store.selectedAnimation = initialMotion
+              resetComposite()
+              startPlayerRenderLoop(p)
+              setSpineAnimation(p, initialMotion, { loop: true })
+              if (store.playing) {
+                p.play()
+              } else {
+                p.pause()
+              }
+              return
             }
-            return
           }
         }
         
@@ -2484,7 +2502,7 @@ function canTriggerCharacterMotion() {
     showingMobileOverlay.value ||
     exportingAnimation ||
     exportingFrames ||
-    compositeActive ||
+    (compositeActive && store.animationCategory !== 'ultimate') ||
     forceTransparentClear ||
     activePointerId !== null ||
     (recorder !== null && recorder.state !== 'inactive')
@@ -2614,7 +2632,12 @@ function playCharacterMotion() {
         }
       }
       
-      // Last resort - return 0, code will handle it
+      // Last resort - check if it's a spine animation
+      const spineAnim = state.data.skeletonData.animations.find((a: any) => a.name === animName)
+      if (spineAnim?.duration) {
+        return spineAnim.duration
+      }
+      
       return 0
     }
     
@@ -2635,14 +2658,25 @@ function playCharacterMotion() {
           const nextComposite = composites.find(c => c.name === nextAnimName)
           
           if (nextComposite) {
+            // It's a composite animation
             const timerId = window.setTimeout(() => {
               store.selectedAnimation = nextAnimName
             }, currentDelay)
             pendingUltimateTimers.push(timerId)
-            
-            const nextDuration = getAnimationDuration(nextAnimName)
-            currentDelay += (nextDuration || 3.5) * 1000
+          } else {
+            // It's a spine animation - actually queue it to play
+            const spineAnim = state.data.skeletonData.animations.find(a => a.name === nextAnimName)
+            if (spineAnim) {
+              const timerId = window.setTimeout(() => {
+                state.setAnimation(0, nextAnimName, false)
+                store.selectedAnimation = nextAnimName
+              }, currentDelay)
+              pendingUltimateTimers.push(timerId)
+            }
           }
+          
+          const nextDuration = getAnimationDuration(nextAnimName)
+          currentDelay += (nextDuration || 3.5) * 1000
         }
       }
       

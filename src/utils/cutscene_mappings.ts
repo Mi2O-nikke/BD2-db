@@ -1832,7 +1832,23 @@ const cutsceneComposites: Record<string, CutsceneCompositeEntry> = {
         { name: "B_cut", playDuration: 4 }
       ]
     }
-  ]
+  ],
+  "001297": [
+    {
+      name: "cut_A_all",
+      composite: [[
+        { name: "cut_A", playDuration: 8 },
+        { name: "cut_A_bowl", playDuration: 8 },
+      ]]
+    },
+    {
+      name: "loop_all",
+      composite: [[
+        { name: "loop", playDuration: 8 },
+        { name: "loop_bowl", playDuration: 8 }
+      ]]
+    },
+  ],
 }
 
 export default cutsceneComposites
